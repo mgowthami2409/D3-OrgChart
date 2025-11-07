@@ -376,39 +376,46 @@ function OrgChartView_d3({
                 <label style={{ marginRight: 4, fontSize: 14 }}>Before printing, click the Refresh button to ensure the chart fits properly on your screen.</label>
                 <span style={{ color: 'black', marginRight: 8, fontSize: 14 }}>Click on a person to open the popup then click '+' icon to upload Photo of a person
                 </span>
-                <label style={{ marginRight: 4, marginLeft: 4, fontSize: 12 }}>Select up to 2 additional fields to show:</label>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                  maxHeight: 100,
-                  width: 180,
-                  overflow: "auto",
-                  fontSize: 14,
-                  padding: 2,
-                  border: "1px solid #ddd",
-                  borderRadius: 4,
-                  // background: "#fff",
-                }}
-              >
-                {(headers || []).map((h) => (
-                  <label
-                    key={h}
-                    style={{ display: "flex", alignItems: "center", gap: 8 }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedExtras.includes(h)}
-                      onChange={() => toggleExtra(h)}
-                    />
-                    <span>{h}</span>
-                  </label>
-                ))}
-              </div>
+                {/* Field Selector */}
+                <label style={{ marginRight: 4, marginLeft: 4, fontSize: 12 }}>
+                  Select up to 2 additional fields to show:
+                </label>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    maxHeight: 100,
+                    width: 180,
+                    overflow: "auto",
+                    fontSize: 14,
+                    padding: 2,
+                    border: "1px solid #ddd",
+                    borderRadius: 4,
+                  }}
+                >
+                  {(headers || [])
+                    .filter((h) => {
+                      const key = String(h).toLowerCase();
+                      // hide obvious non-extras, same as Balkan
+                      return key !== "photo" &&
+                            key !== "image" &&
+                            key !== "first_name" &&   // or whatever your chosen name field key is
+                            key !== "name";
+                    })
+                    .map((h) => (
+                      <label key={h} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedExtras.includes(h)}
+                          onChange={() => toggleExtra(h)}
+                        />
+                        <span>{h}</span>
+                      </label>
+                    ))}
+                </div>
             </div>
           </div>
-
         </div>
 
         {/* Chart */}
