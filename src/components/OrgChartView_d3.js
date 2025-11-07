@@ -18,41 +18,74 @@ function OrgChartView_d3({
 }) {
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
+  const exportRef = useRef(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [layout, setLayout] = useState("top");
   const [template, setTemplate] = useState("ana");
   const [showInstructions, setShowInstructions] = useState(false);
+  const [selectedExtras, setSelectedExtras] = useState([]);
 
-  // color logic for statuses
+  const localDepartment = department;
+
+  // === status color helper ===
   const getColor = (status) => {
     const s = String(status || "").toLowerCase();
     if (s.includes("active")) return "#1e4489";
     if (s.includes("notice")) return "#bd2331";
     if (s.includes("vacant") || s.includes("vacency")) return "#ef6724";
-    return "#e0e0e0";
+    return "#b0b0b0";
   };
 
-  // template renderers
+   // template renderers
   const TEMPLATES = useMemo(
     () => ({
       ana: (d) => {
         const color = getColor(d.data.status);
         return `
-          <div style="width:220px;height:100px;border-radius:10px;background:${color};
-            color:#fff;display:flex;flex-direction:column;align-items:center;
-            justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.15);text-align:center;">
+          <div style="
+            width:220px;
+            height:auto;
+            min-height:110px;
+            border-radius:10px;
+            background:${color};
+            color:#fff;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            padding:10px 5px;
+            box-shadow:0 2px 6px rgba(0,0,0,0.15);
+            text-align:center;
+          ">
             ${
               d.data.photo
-                ? `<img src="${d.data.photo}" style="width:40px;height:40px;border-radius:50%;
-                    border:2px solid #fff;object-fit:cover;margin-bottom:5px;"/>`
-                : `<div style="width:40px;height:40px;border-radius:50%;border:2px solid #fff;
-                    display:flex;align-items:center;justify-content:center;font-size:12px;margin-bottom:5px;">👤</div>`
+                ? `<img src="${d.data.photo}" style="
+                      width:50px;
+                      height:50px;
+                      border-radius:50%;
+                      border:2px solid #fff;
+                      object-fit:cover;
+                      margin-bottom:6px;
+                    "/>`
+                : `<div style="
+                      width:50px;
+                      height:50px;
+                      border-radius:50%;
+                      border:2px solid #fff;
+                      display:flex;
+                      align-items:center;
+                      justify-content:center;
+                      font-size:20px;
+                      margin-bottom:6px;
+                    ">👤</div>`
             }
-            <div style="font-weight:700;font-size:13px;">${d.data.name || ""}</div>
-            <div style="font-size:11px;opacity:0.9;">${d.data.title || ""}</div>
+            <div style="font-weight:700;font-size:14px;line-height:1.3;">
+              ${d.data.name || ""}
+            </div>
           </div>`;
       },
+
       olivia: (d) => {
         const color = getColor(d.data.status);
         return `
@@ -62,7 +95,6 @@ function OrgChartView_d3({
             <img src="${d.data.photo || ""}" style="width:56px;height:56px;border-radius:50%;
               border:2px solid #fff;margin-bottom:6px;object-fit:cover;"/>
             <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
-            <div style="font-size:13px;">${d.data.title || ""}</div>
           </div>`;
       },
       belinda: (d) => {
@@ -72,7 +104,6 @@ function OrgChartView_d3({
             color:#fff;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.2);
             padding:12px;text-align:center;">
             <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
-            <div style="font-size:13px;">${d.data.title || ""}</div>
           </div>`;
       },
       rony: (d) => {
@@ -83,7 +114,6 @@ function OrgChartView_d3({
             flex-direction:column;box-shadow:0 2px 6px rgba(0,0,0,.15);
             text-align:center;">
             <div style="font-weight:700;font-size:16px;">${d.data.name || ""}</div>
-            <div style="font-size:13px;">${d.data.title || ""}</div>
           </div>`;
       },
       mery: (d) => {
@@ -94,7 +124,6 @@ function OrgChartView_d3({
             <img src="${d.data.photo || ""}" style="width:56px;height:56px;border-radius:50%;
               border:2px solid #fff;margin-bottom:6px;object-fit:cover;"/>
             <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
-            <div style="font-size:13px;">${d.data.title || ""}</div>
           </div>`;
       },
       polina: (d) => {
@@ -107,7 +136,6 @@ function OrgChartView_d3({
               border:2px solid #fff;object-fit:cover;"/>
             <div style="flex:1;margin-left:10px;">
               <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
-              <div style="font-size:13px;">${d.data.title || ""}</div>
             </div>
           </div>`;
       },
@@ -117,7 +145,6 @@ function OrgChartView_d3({
           <div style="width:230px;border-radius:10px;background:${color};color:#fff;
             text-align:center;padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);">
             <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
-            <div style="font-size:13px;">${d.data.title || ""}</div>
             <img src="${d.data.photo || ""}" style="width:46px;height:46px;border-radius:50%;
               border:2px solid #fff;margin-top:6px;object-fit:cover;"/>
           </div>`;
@@ -130,7 +157,6 @@ function OrgChartView_d3({
             padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);">
             <div style="flex:1;text-align:left;">
               <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
-              <div style="font-size:13px;">${d.data.title || ""}</div>
             </div>
             <img src="${d.data.photo || ""}" style="width:54px;height:54px;border-radius:50%;
               border:2px solid #fff;margin-left:10px;object-fit:cover;"/>
@@ -142,7 +168,7 @@ function OrgChartView_d3({
 
   const LAYOUT_MAP = { top: "top", left: "left", right: "right", bottom: "bottom" };
 
-  // render chart
+  // === render chart ===
   useEffect(() => {
     const container = chartContainerRef.current;
     if (!container || !data?.length) return;
@@ -154,6 +180,7 @@ function OrgChartView_d3({
       title: r.Designation || r.title || "",
       photo: r.Photo || "",
       status: r.Status || "",
+      raw: r,
     }));
 
     const instance = chartRef.current || new OrgChart().container(container);
@@ -170,28 +197,55 @@ function OrgChartView_d3({
           .attr("stroke-width", 3)
           .attr("fill", "none");
       })
-      .nodeContent((d) => (TEMPLATES[template] ? TEMPLATES[template](d) : TEMPLATES.ana(d)))
+      .nodeContent((d) => {
+        // Collect up to 2 extra field values based on user's checkbox selections
+        const extras = selectedExtras
+          .map((field) => d.data.raw?.[field])
+          .filter(Boolean)
+          .slice(0, 2); // limit to 2 fields
+
+        // Create small HTML block for extra fields
+        const extrasHTML = extras
+          .map(
+            (val, i) =>
+              `<div style="font-size:11px;opacity:0.9;line-height:1.3;margin-top:${i === 0 ? '4px' : '2px'};">${val}</div>`
+          )
+          .join("");
+
+        // Get the base template content (always shows name and maybe title)
+        const baseContent =
+          TEMPLATES[template]?.(d) || TEMPLATES.ana(d);
+
+        // Inject the extras just before closing </div> tag (at the bottom of the node)
+        return baseContent.replace("</div>", `${extrasHTML}</div>`);
+      })
+
       .onNodeClick((d) => {
-        const emp = originalData.find((r) => String(r.ID) === String(d.data.id));
+        const emp = originalData.find(
+          (r) => String(r.ID) === String(d.data.id)
+        );
         if (emp && setSelectedEmployee) setSelectedEmployee(emp);
       })
-      .expandAll() // 👈 ensures full expansion
+      .expandAll()
       .render()
       .fit();
 
     chartRef.current = instance;
-  }, [data, template, layout]);
+  }, [data, template, layout, selectedExtras, TEMPLATES]);
 
-  // utility actions
+  // === handlers ===
   const handleExportImage = async () => {
     const node = chartContainerRef.current;
     if (!node) return;
-    await html2canvas(node, { scale: 2, backgroundColor: "#ffffff", useCORS: true }).then((canvas) => {
-      const link = document.createElement("a");
-      link.download = "orgchart.png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+    const canvas = await html2canvas(node, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
     });
+    const link = document.createElement("a");
+    link.download = "orgchart.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
   };
 
   const handleLayoutChange = (l) => {
@@ -207,71 +261,184 @@ function OrgChartView_d3({
   const handleSearch = (q) => {
     setSearchQuery(q);
     if (!q) return chartRef.current?.clearHighlight().render();
-    chartRef.current?.setHighlighted((node) =>
-      String(node.data.name || "").toLowerCase().includes(q.toLowerCase())
-    ).render();
+    chartRef.current
+      ?.setHighlighted((node) =>
+        String(node.data.name || "").toLowerCase().includes(q.toLowerCase())
+      )
+      .render();
   };
 
+  const handlePrint = () => window.print();
+  const toggleFullScreen = () => {
+    !document.fullscreenElement
+      ? document.documentElement.requestFullscreen()
+      : document.exitFullscreen();
+  };
+
+  const toggleExtra = (field) => {
+    setSelectedExtras((prev) => {
+      if (prev.includes(field)) return prev.filter((f) => f !== field);
+      if (prev.length >= 2) return prev; // limit 2
+      return [...prev, field];
+    });
+  };
+
+  // === render ===
   return (
     <>
+      <div
+        className="print-header"
+        style={{ display: "none", textAlign: "center", marginBottom: 10 }}
+      >
+        <img src="/onlylogo.png" alt="Logo" />
+        <h1>Suprajit</h1>
+        <span className="print-department">
+          {localDepartment ? `Department name: ${localDepartment}` : ""}
+        </span>
+      </div>
+
       <div className="orgchart-view">
         <header className="header">SUPRAJIT ENGINEERING LIMITED</header>
 
-        {/* 🔹 Controls identical to Balkan style */}
-        <Controls
-          searchQuery={searchQuery}
-          setSearchQuery={handleSearch}
-          onRefresh={handleRefresh}
-          onBack={onBackToUpload}
-          onPrint={() => window.print()}
-          onExportImage={handleExportImage}
-          toggleFullScreen={() =>
-            !document.fullscreenElement
-              ? document.documentElement.requestFullscreen()
-              : document.exitFullscreen()
-          }
-          onLayoutChange={handleLayoutChange}
-          selectedLayout={layout}
-          templates={[
-            { key: "ana", label: "Ana" },
-            { key: "olivia", label: "Olivia" },
-            { key: "belinda", label: "Belinda" },
-            { key: "rony", label: "Rony" },
-            { key: "mery", label: "Mery" },
-            { key: "polina", label: "Polina" },
-            { key: "diva", label: "Diva" },
-            { key: "isla", label: "Isla" },
-          ]}
-          onSelectTemplate={setTemplate}
-          selectedTemplate={template}
-        />
+        {/* === Combined Controls + Info Section === */}
+        <div
+          className="orgchart-container"
+          style={{
+            background: "#a9d8f3",
+            padding: "5px 10px",
+            borderRadius: "8px",
+            marginBottom: "5px",
+          }}
+        >
+          {/* Controls */}
+          <Controls
+            searchQuery={searchQuery}
+            setSearchQuery={handleSearch}
+            onRefresh={handleRefresh}
+            onBack={onBackToUpload}
+            onPrint={handlePrint}
+            onExportImage={handleExportImage}
+            toggleFullScreen={toggleFullScreen}
+            onLayoutChange={handleLayoutChange}
+            selectedLayout={layout}
+            templates={[
+              { key: "ana", label: "Ana" },
+              { key: "olivia", label: "Olivia" },
+              { key: "belinda", label: "Belinda" },
+              { key: "rony", label: "Rony" },
+              { key: "mery", label: "Mery" },
+              { key: "polina", label: "Polina" },
+              { key: "diva", label: "Diva" },
+              { key: "isla", label: "Isla" },
+            ]}
+            onSelectTemplate={setTemplate}
+            selectedTemplate={template}
+          />
 
-        {/* ℹ️ Instruction bar below header */}
-        <div className="field-selectors">
-          <button
-            onClick={() => setShowInstructions(true)}
-            className="instructions-popup"
-            style={{ fontSize: 14, cursor: "pointer" }}
+          {/* Instructions + Field Selector (aligned baseline, right side) */}
+          <div
+            className="field-selectors"
+            style={{ display: 'flex', gap: 3, alignItems: 'center', padding: '5px 5px' }}
           >
-            ⓘ Instructions
-          </button>
-          <label style={{ fontSize: 14 }}>
-            Before printing, click the Refresh button to ensure the chart fits properly on your screen.
-            Click on a person to open the popup then click '+' icon to upload Photo of a person.
-          </label>
+            {/* Left Section — Instructions */}
+            {/* <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                minWidth: "60%",
+              }}
+            > */}
+              {/* <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                  lineHeight: "1.4",
+                }}
+              > */}
+                <span className="instructions-popup" style={{ textAlign: "center" }}>
+                  <button
+                    onClick={() => setShowInstructions(true)}
+                    title="View Instructions"
+                    style={{
+                      fontSize: 14,
+                      cursor: "pointer",
+                      // borderRadius: "5px",
+                      // padding: "2px 8px",
+                      // fontWeight: "bold",
+                    }}
+                  >
+                    ⓘ Instructions
+                  </button>
+                </span>
+                <label style={{ marginRight: 4, fontSize: 14 }}>Before printing, click the Refresh button to ensure the chart fits properly on your screen.</label>
+                <span style={{ color: 'black', marginRight: 8, fontSize: 14 }}>Click on a person to open the popup then click '+' icon to upload Photo of a person
+                </span>
+                <label style={{ marginRight: 4, marginLeft: 4, fontSize: 12 }}>Select up to 2 additional fields to show:</label>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  maxHeight: 100,
+                  width: 180,
+                  overflow: "auto",
+                  fontSize: 14,
+                  padding: 2,
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  // background: "#fff",
+                }}
+              >
+                {(headers || []).map((h) => (
+                  <label
+                    key={h}
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedExtras.includes(h)}
+                      onChange={() => toggleExtra(h)}
+                    />
+                    <span>{h}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <div className="chart-container" ref={chartContainerRef}></div>
-      </div>
+        {/* Chart */}
+        <div className="print-label" ref={exportRef}>
+          <div
+            className={`chart-container template-${template}`}
+            id="orgChart"
+            ref={chartContainerRef}
+          ></div>
+        </div>
+      
 
-      {/* 🟦 Status legend (Active / Vacant / Notice) */}
+      {/* === Status Legend === */}
       <div className="theme">
-        <p className="themep"><span style={{ color: "#1e4489" }}>●</span> Active</p>
-        <p className="themep"><span style={{ color: "#ef6724" }}>●</span> Vacant</p>
-        <p className="themep"><span style={{ color: "#bd2331" }}>●</span> Notice</p>
+        <p className="themep">
+          <img src="./Blue.png" alt="Blue" className="logo1" /> - refers to
+          Active
+        </p>
+        <p className="themep">
+          <img src="./Orange.png" alt="Orange" className="logo1" /> - refers to
+          Vacant
+        </p>
+        <p className="themep">
+          <img src="./Red.png" alt="Red" className="logo1" /> - refers to Notice
+        </p>
       </div>
 
-      {showInstructions && <InstructionsPopup onClose={() => setShowInstructions(false)} />}
+      {showInstructions && (
+        <InstructionsPopup onClose={() => setShowInstructions(false)} />
+      )}
     </>
   );
 }
