@@ -19,7 +19,6 @@ function OrgChartView_d3({
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const exportRef = useRef(null);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [layout, setLayout] = useState("top");
   const [template, setTemplate] = useState("ana");
@@ -42,48 +41,74 @@ function OrgChartView_d3({
     () => ({
       ana: (d) => {
         const color = getColor(d.data.status);
+        const extras = d.data.raw?.__extras || [];
+
+        const extrasHTML = extras
+          .map(
+            (val) => `
+              <div style="
+                font-size:14px;
+                font-weight:500;
+                color:rgba(255,255,255,0.95);
+                line-height:1.4;
+                text-align:left;
+              ">${val}</div>`
+          )
+          .join("");
+
+        const photoBlock = d.data.photo
+          ? `<img src="${d.data.photo}" style="
+                width:70px;
+                height:70px;
+                border-radius:50%;
+                border:3px solid #fff;
+                object-fit:cover;
+                flex-shrink:0;
+              "/>`
+          : `<div style="
+                width:70px;
+                height:70px;
+                border-radius:50%;
+                border:3px solid #fff;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                font-size:30px;
+                background:rgba(255,255,255,.15);
+                flex-shrink:0;
+              ">👤</div>`;
+
         return `
           <div style="
-            width:220px;
-            height:auto;
-            min-height:110px;
+            width:340px;
+            height:130px;
             border-radius:10px;
             background:${color};
             color:#fff;
             display:flex;
             flex-direction:column;
-            align-items:center;
             justify-content:center;
-            padding:10px 5px;
-            box-shadow:0 2px 6px rgba(0,0,0,0.15);
-            text-align:center;
+            padding:10px 14px;
+            box-shadow:0 3px 8px rgba(0,0,0,0.2);
+            font-family:Arial, sans-serif;
           ">
-            ${
-              d.data.photo
-                ? `<img src="${d.data.photo}" style="
-                      width:50px;
-                      height:50px;
-                      border-radius:50%;
-                      border:2px solid #fff;
-                      object-fit:cover;
-                      margin-bottom:6px;
-                    "/>`
-                : `<div style="
-                      width:50px;
-                      height:50px;
-                      border-radius:50%;
-                      border:2px solid #fff;
-                      display:flex;
-                      align-items:center;
-                      justify-content:center;
-                      font-size:20px;
-                      margin-bottom:6px;
-                    ">👤</div>`
-            }
-            <div style="font-weight:700;font-size:14px;line-height:1.3;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              ${photoBlock}
+              <div style="flex:1;text-align:left;">
+                ${extrasHTML || ""}
+              </div>
+            </div>
+            <div style="
+              text-align:center;
+              font-weight:700;
+              font-size:18px;
+              margin-top:6px;
+              letter-spacing:0.3px;
+            ">
               ${d.data.name || ""}
             </div>
-          </div>`;
+          </div>
+        `;
       },
 
       olivia: (d) => {
@@ -187,14 +212,16 @@ function OrgChartView_d3({
 
     instance
       .data(chartData)
-      .nodeWidth(() => 260)
+      .nodeWidth(() => 320)
       .nodeHeight(() => 120)
-      .childrenMargin(() => 60)
+      .childrenMargin(() => 200) // was 60
+      .compact(false) // ensures tight sibling spacing
+      .siblingsMargin(() => 60) 
       .layout(LAYOUT_MAP[layout] || "top")
       .linkUpdate(function () {
         d3.select(this)
           .attr("stroke", "#1e4489")
-          .attr("stroke-width", 3)
+          .attr("stroke-width", 4)
           .attr("fill", "none");
       })
       .nodeContent((d) => {
@@ -228,7 +255,7 @@ function OrgChartView_d3({
       })
       .expandAll()
       .render()
-      .fit();
+      .fit(0.8);
 
     chartRef.current = instance;
   }, [data, template, layout, selectedExtras, TEMPLATES]);
@@ -254,18 +281,85 @@ function OrgChartView_d3({
   };
 
   const handleRefresh = () => {
-    chartRef.current?.expandAll().render().fit();
+    const inst = chartRef.current;
+    if (!inst || !data?.length) return;
+
+    // 🟢 Restore full dataset (like original load)
+    const fullData = data.map((r) => ({
+      id: r.ID,
+      parentId: r["Parent ID"] || null,
+      name: r.First_Name || r.name || "",
+      title: r.Designation || r.title || "",
+      photo: r.Photo || "",
+      status: r.Status || "",
+      raw: r,
+    }));
+
+    // 🟢 Re-render full orgchart
+    inst.data(fullData).expandAll().render().fit(0.8);
+
+    // 🟢 Reset search input
     setSearchQuery("");
   };
 
   const handleSearch = (q) => {
     setSearchQuery(q);
-    if (!q) return chartRef.current?.clearHighlight().render();
-    chartRef.current
-      ?.setHighlighted((node) =>
-        String(node.data.name || "").toLowerCase().includes(q.toLowerCase())
-      )
-      .render();
+    const inst = chartRef.current;
+    if (!inst || !originalData?.length) return;
+
+    // 🟢 If search box is cleared → show full chart again
+    if (!q || q.trim() === "") {
+      const fullData = data.map((r) => ({
+        id: r.ID,
+        parentId: r["Parent ID"] || null,
+        name: r.First_Name || r.name || "",
+        photo: r.Photo || "",
+        status: r.Status || "",
+        raw: r,
+      }));
+      inst.data(fullData).expandAll().render().fit();
+      return;
+    }
+
+    // 🟢 Find the matching employee
+    const root = originalData.find(
+      (r) =>
+        String(r.First_Name || r.name || "")
+          .toLowerCase()
+          .includes(q.toLowerCase())
+    );
+
+    if (!root) return; // no match found
+
+    // 🟢 Recursively collect all subordinates (children)
+    const collectSubtree = (id) => {
+      const children = originalData.filter((e) => e["Parent ID"] === id);
+      return [
+        ...children,
+        ...children.flatMap((child) => collectSubtree(child.ID)),
+      ];
+    };
+
+    const subtree = [root, ...collectSubtree(root.ID)];
+
+    // 🟢 Map to D3 format — make searched person root (no parent)
+    const chartData = subtree.map((r) => ({
+      id: r.ID,
+      parentId: r.ID === root.ID ? null : r["Parent ID"],
+      name: r.First_Name || r.name || "",
+      photo: r.Photo || "",
+      status: r.Status || "",
+      raw: r,
+    }));
+
+    // 🟢 Render subtree only (no parents)
+    inst.data(chartData).expandAll().render().fit(0.8);
+
+    // 🟢 Optional: center and zoom to searched person
+    const searchedNode = inst.data().find(d => String(d.id) === String(root.ID));
+    if (searchedNode && inst.zoomToNode) {
+      setTimeout(() => inst.zoomToNode(root.ID, 0.8), 300);
+    }
   };
 
   const handlePrint = () => window.print();

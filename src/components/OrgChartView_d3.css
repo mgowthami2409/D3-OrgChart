@@ -121,3 +121,7 @@ select {
     display: none !important;
   }
 }
+.chart-container {
+  transform: scale(1.05);
+  transform-origin: top center;
+}

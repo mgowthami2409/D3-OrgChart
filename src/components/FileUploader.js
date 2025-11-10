@@ -11,7 +11,6 @@ function FileUploader({ setOriginalData, setDisplayData, setHeaders, setDepartme
   const [images, setImages] = useState({});
   const [photoFolderLabel, setPhotoFolderLabel] = useState("No folder chosen");
 
-
   // normalize filenames (basename, lowercase)
   const normalize = (p) => {
     if (!p && p !== 0) return "";

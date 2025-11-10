@@ -449,3 +449,8 @@
   font-size: 18pt !important;
   font-weight: normal;
 }
+
+.chart-container {
+  transform: scale(1.05);
+  transform-origin: top center;
+}
