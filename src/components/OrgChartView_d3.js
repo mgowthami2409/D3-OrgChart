@@ -1,378 +1,218 @@
-// src/components/OrgChartView_d3.js
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import * as d3 from "d3";
-// NOTE: no d3-org-chart here – we render manually
+import { OrgChart } from "d3-org-chart";
 import html2canvas from "html2canvas";
 import Controls from "./Controls";
 import InstructionsPopup from "./InstructionsPopup";
 import "./OrgChartView.css";
-import { buildHierarchy, applyBalkanLayout } from "../layouts/balkanLike";
-import jsPDF from "jspdf";
 
 function OrgChartView_d3({
   data,
   originalData,
-  setDisplayData,      // not used by custom engine; kept for API compatibility
   setSelectedEmployee,
   onBackToUpload,
   headers = [],
   department = "",
 }) {
   const chartContainerRef = useRef(null);
+  const chartRef = useRef(null);
   const exportRef = useRef(null);
-
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLayout, setSelectedLayout] = useState("normal"); // Balkan-like key
+  const [layout, setLayout] = useState("mixed");
   const [template, setTemplate] = useState("ana");
   const [showInstructions, setShowInstructions] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState([]);
-  const [visibleData, setVisibleData] = useState(data || []);
-  const [version, setVersion] = useState(0); // force rerender when needed
-
-  useEffect(() => setVisibleData(data || []), [data]);
 
   const localDepartment = department;
 
-  // === status color helper ===
+  // ==================== HELPERS ====================
+  const normalizePhoto = (val) => {
+    if (!val) return "";
+    const s = String(val).trim();
+    if (s.startsWith("data:image")) return s;
+    if (/^https?:\/\//i.test(s)) return s;
+    if (s.startsWith("/")) return s;
+    return `/uploads/${s}`;
+  };
+
   const getColor = (status) => {
     const s = String(status || "").toLowerCase();
     if (s.includes("active")) return "#1e4489";
     if (s.includes("notice")) return "#bd2331";
-    if (s.includes("vacant") || s.includes("vacency")) return "#ef6724";
-    return "#b0b0b0";
+    if (s.includes("vacant")) return "#ef6724";
+    return "#1e4489";
   };
 
-  // === templates ===
-  const TEMPLATES = useMemo(
-    () => ({
-      ana: (d) => {
+  const TEMPLATE_CONFIG = {
+    ana: { nodeWidth: 480, nodeHeight: 150 },
+    olivia: { nodeWidth: 260, nodeHeight: 120 },
+    belinda: { nodeWidth: 240, nodeHeight: 110 },
+    rony: { nodeWidth: 240, nodeHeight: 110 },
+    mery: { nodeWidth: 230, nodeHeight: 100 },
+    polina: { nodeWidth: 250, nodeHeight: 110 },
+    diva: { nodeWidth: 230, nodeHeight: 100 },
+    isla: { nodeWidth: 250, nodeHeight: 110 },
+  };
+
+  const LAYOUTS = {
+    mixed: { layout: "top", compact: false, childrenMargin: 120, siblingsMargin: 60 },
+    top: { layout: "top", compact: false, childrenMargin: 120, siblingsMargin: 60 },
+    left: { layout: "left", compact: false, childrenMargin: 120, siblingsMargin: 60 },
+    right: { layout: "right", compact: false, childrenMargin: 120, siblingsMargin: 60 },
+    bottom: { layout: "bottom", compact: false, childrenMargin: 120, siblingsMargin: 60 },
+  };
+
+  // ==================== NODE TEMPLATES ====================
+  const TEMPLATES = useMemo(() => {
+    const photoPlaceholder = `<div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.25);
+      display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>`;
+
+    const baseNode = (d, conf, color, content) => `
+      <div style="width:${conf.nodeWidth}px;height:${conf.nodeHeight}px;
+        background:${color};border-radius:10px;color:#fff;position:relative;
+        box-shadow:0 2px 6px rgba(0,0,0,.15);font-family:Arial,sans-serif;">
+        ${content}
+      </div>`;
+
+    return {
+      ana: (d, conf) => {
         const color = getColor(d.data.status);
-        const extras = d.data.raw?.__extras || [];
-
-        const extrasHTML = extras
-          .map(
-            (val) => `
-              <div style="
-                font-size:14px;
-                font-weight:500;
-                color:rgba(255,255,255,0.95);
-                line-height:1.4;
-                text-align:left;
-              ">${val}</div>`
-          )
-          .join("");
-
-        const photoBlock = d.data.photo
-          ? `<img src="${d.data.photo}" style="
-                width:70px; height:70px; border-radius:50%;
-                border:3px solid #fff; object-fit:cover; flex-shrink:0;
-              "/>`
-          : `<div style="
-                width:70px; height:70px; border-radius:50%;
-                border:3px solid #fff; display:flex; align-items:center;
-                justify-content:center; font-size:30px;
-                background:rgba(255,255,255,.15); flex-shrink:0;
-              ">👤</div>`;
-
-        return `
-          <div style="
-            width:340px; height:130px; border-radius:10px; background:${color};
-            color:#fff; display:flex; flex-direction:column; justify-content:center;
-            padding:10px 14px; box-shadow:0 3px 8px rgba(0,0,0,0.2);
-            font-family:Arial, sans-serif;
-          ">
-            <div style="display:flex;align-items:center;gap:10px;">
-              ${photoBlock}
-              <div style="flex:1;text-align:left;">${extrasHTML || ""}</div>
+        const photo = d.data.photo
+          ? `<img src="${d.data.photo}" style="width:70px;height:70px;border-radius:50%;border:3px solid #fff;object-fit:cover;" />`
+          : photoPlaceholder;
+        return baseNode(
+          d,
+          conf,
+          color,
+          `<div style="display:flex;align-items:center;gap:12px;padding:10px;">
+              ${photo}
+              <div style="flex:1;overflow:hidden;">
+                <div style="font-size:14px;font-weight:600;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;">${d.data.title || ""}</div>
+                <div class="extras"></div>
+              </div>
             </div>
-            <div style="
-              text-align:center; font-weight:700; font-size:18px; margin-top:6px;
-              letter-spacing:0.3px;
-            ">${d.data.name || ""}</div>
-          </div>
-        `;
+            <div style="text-align:center;font-size:18px;font-weight:700;">${d.data.name || ""}</div>`
+        );
       },
-
-      olivia: (d) => {
+      olivia: (d, conf) => {
         const color = getColor(d.data.status);
-        return `
-          <div style="width:240px;height:120px;border-radius:16px;background:${color};
-            color:#fff;text-align:center;display:flex;flex-direction:column;
-            justify-content:center;align-items:center;box-shadow:0 3px 6px rgba(0,0,0,.2);">
-            <img src="${d.data.photo || ""}" style="width:56px;height:56px;border-radius:50%;
-              border:2px solid #fff;margin-bottom:6px;object-fit:cover;"/>
-            <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
-          </div>`;
-      },
-      belinda: (d) => {
-        const color = getColor(d.data.status);
-        return `
-          <div style="width:240px;border-radius:10px;background:${color};
-            color:#fff;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.2);
-            padding:12px;text-align:center;">
-            <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
-          </div>`;
-      },
-      rony: (d) => {
-        const color = getColor(d.data.status);
-        return `
-          <div style="width:230px;height:110px;border-radius:12px;background:${color};
-            color:#fff;display:flex;align-items:center;justify-content:center;
-            flex-direction:column;box-shadow:0 2px 6px rgba(0,0,0,.15);
-            text-align:center;">
-            <div style="font-weight:700;font-size:16px;">${d.data.name || ""}</div>
-          </div>`;
-      },
-      mery: (d) => {
-        const color = getColor(d.data.status);
-        return `
-          <div style="width:210px;text-align:center;border-radius:12px;background:${color};
-            color:#fff;padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);">
-            <img src="${d.data.photo || ""}" style="width:56px;height:56px;border-radius:50%;
-              border:2px solid #fff;margin-bottom:6px;object-fit:cover;"/>
-            <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
-          </div>`;
-      },
-      polina: (d) => {
-        const color = getColor(d.data.status);
-        return `
-          <div style="width:250px;height:110px;border-radius:10px;background:${color};
-            color:#fff;display:flex;align-items:center;justify-content:space-between;
-            padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);">
-            <img src="${d.data.photo || ""}" style="width:54px;height:54px;border-radius:50%;
-              border:2px solid #fff;object-fit:cover;"/>
-            <div style="flex:1;margin-left:10px;">
-              <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
+        const photo = d.data.photo
+          ? `<img src="${d.data.photo}" style="width:60px;height:60px;border-radius:50%;border:2px solid #fff;object-fit:cover;margin-right:10px;" />`
+          : photoPlaceholder;
+        return baseNode(
+          d,
+          conf,
+          color,
+          `<div style="display:flex;align-items:center;padding:10px;">
+            ${photo}
+            <div style="flex:1;overflow:hidden;">
+              <div style="font-size:15px;font-weight:700;">${d.data.name || ""}</div>
+              <div style="font-size:13px;">${d.data.title || ""}</div>
+              <div class="extras"></div>
             </div>
-          </div>`;
+          </div>`
+        );
       },
-      diva: (d) => {
-        const color = getColor(d.data.status);
-        return `
-          <div style="width:230px;border-radius:10px;background:${color};color:#fff;
-            text-align:center;padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);">
-            <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
-            <img src="${d.data.photo || ""}" style="width:46px;height:46px;border-radius:50%;
-              border:2px solid #fff;margin-top:6px;object-fit:cover;"/>
-          </div>`;
-      },
-      isla: (d) => {
-        const color = getColor(d.data.status);
-        return `
-          <div style="width:250px;height:110px;border-radius:12px;background:${color};
-            color:#fff;display:flex;align-items:center;justify-content:center;
-            padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);">
-            <div style="flex:1;text-align:left;">
-              <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
-            </div>
-            <img src="${d.data.photo || ""}" style="width:54px;height:54px;border-radius:50%;
-              border:2px solid #fff;margin-left:10px;object-fit:cover;"/>
-          </div>`;
-      },
-    }),
-    []
-  );
+    };
+  }, []);
 
-  // === draw chart ===
+  // ==================== CHART RENDER ====================
   useEffect(() => {
     const container = chartContainerRef.current;
-    if (!container || !visibleData?.length) {
-      if (container) d3.select(container).selectAll("*").remove();
-      return;
-    }
+    if (!container || !data?.length) return;
 
-    // 1) prepare rows with up to 2 extras
-    const rows = visibleData.map((r) => {
-      const extras = (selectedExtras || [])
-        .map((f) => (r[f] != null ? String(r[f]).trim() : ""))
-        .filter(Boolean)
-        .slice(0, 2);
+    const chartData = data.map((r) => ({
+      id: r.ID,
+      parentId: r["Parent ID"] || null,
+      name: r.First_Name || r.name || "",
+      title: r.Designation || r.title || "",
+      photo: normalizePhoto(r.Photo || r.Image || ""),
+      status: r.Status || "",
+      raw: r,
+    }));
 
-      return {
-        id: r.ID,
-        parentId: r["Parent ID"] || null,
-        name: r.First_Name || r.name || "",
-        title: r.Designation || r.title || "",
-        photo: r.Photo || "",
-        status: r.Status || "",
-        raw: { ...r, __extras: extras },
-        _nodeW: 320,
-        _nodeH: 120,
-      };
-    });
+    const tConf = TEMPLATE_CONFIG[template];
+    const layoutConf = LAYOUTS[layout];
+    const chart = chartRef.current || new OrgChart().container(container);
 
-    // 2) hierarchy + layout
-    const root = buildHierarchy(rows);
-    applyBalkanLayout(root, selectedLayout, {
-      nodeW: 320,
-      nodeH: 120,
-      compactBetween: 30,
-      compactPair: 40,
-      levelGap: 140,
-      hGap: 40,
-      vGap: 60,
-      maxCols: 6,
-    });
-
-    // 3) compute canvas size
-    const nodes = root.descendants();
-    const maxX = d3.max(nodes, (d) => d.X + (d.data._nodeW || 320)) || 1200;
-    const maxY = d3.max(nodes, (d) => d.Y + (d.data._nodeH || 120)) || 800;
-    const W = Math.max(1200, maxX + 40);
-    const H = Math.max(800, maxY + 40);
-
-    // 4) clear & draw
-    d3.select(container).selectAll("*").remove();
-
-    const svg = d3
-      .select(container)
-      .append("svg")
-      .attr("width", "100%")
-      .attr("height", "100%")
-      .attr("viewBox", `0 0 ${W} ${H}`)
-      .style("overflow", "visible");
-
-    const g = svg.append("g");
-
-    // 5) links
-    const verticalLink = d3
-      .linkVertical()
-      .x((d) => d.x)
-      .y((d) => d.y);
-
-    const links = root.links().map((l) => {
-      const sw = l.source.data._nodeW || 320;
-      const sh = l.source.data._nodeH || 120;
-      const tw = l.target.data._nodeW || 320;
-      return {
-        source: { x: l.source.X + sw / 2, y: l.source.Y + sh },
-        target: { x: l.target.X + tw / 2, y: l.target.Y },
-      };
-    });
-
-    g.selectAll(".link")
-      .data(links)
-      .enter()
-      .append("path")
-      .attr("class", "link")
-      .attr("d", verticalLink)
-      .attr("fill", "none")
-      .attr("stroke", "#1e4489")
-      .attr("stroke-width", 4);
-
-    // 6) nodes (foreignObject so you can use your HTML templates)
-    const node = g
-      .selectAll(".node")
-      .data(nodes)
-      .enter()
-      .append("foreignObject")
-      .attr("class", "node")
-      .attr("width", (d) => d.data._nodeW || 320)
-      .attr("height", (d) => d.data._nodeH || 120)
-      .attr("x", (d) => d.X)
-      .attr("y", (d) => d.Y)
-      .style("overflow", "visible");
-
-    node
-      .append("xhtml:div")
-      .attr("class", (d) => `template-${template}`)
-      .html((d) => {
-        const base =
-          TEMPLATES[template]?.({ data: d.data }) || TEMPLATES.ana({ data: d.data });
-        const extras = (d.data.raw?.__extras || [])
-          .map(
-            (val, i) =>
-              `<div style="font-size:11px;opacity:0.9;line-height:1.3;margin-top:${i === 0 ? "4px" : "2px"};">${val}</div>`
-          )
-          .join("");
-        return `
-          <div style="width:100%;height:100%;display:flex;flex-direction:column;">
-            ${base}
-            <div style="padding:4px 6px;text-align:left;">${extras}</div>
-          </div>
-        `;
+    chart
+      .data(chartData)
+      .nodeWidth(() => tConf.nodeWidth)
+      .nodeHeight(() => tConf.nodeHeight)
+      .childrenMargin(() => layoutConf.childrenMargin)
+      .siblingsMargin(() => layoutConf.siblingsMargin)
+      .compact(layoutConf.compact)
+      .layout(layoutConf.layout)
+      .linkUpdate(function () {
+        d3.select(this).attr("stroke", "#1e4489").attr("stroke-width", 3).attr("fill", "none");
       })
-      .on("click", (_, d) => {
-        const emp = originalData?.find((r) => String(r.ID) === String(d.data.id));
-        if (emp && setSelectedEmployee) setSelectedEmployee(emp);
-      });
-  }, [visibleData, template, selectedLayout, selectedExtras, version]);
+      .nodeContent((d) => {
+        const extras = (selectedExtras || [])
+          .map((f) => d.data.raw?.[f])
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((val) => `<div style="font-size:12px;opacity:0.9;">${val}</div>`)
+          .join("");
+        const base = TEMPLATES[template](d, tConf);
+        const childrenCount = d.children?.length || 0;
 
-  // === handlers ===
+        const icon = childrenCount
+          ? `<div class="collapse-icon" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);cursor:pointer;">
+               <div style="width:20px;height:20px;background:orange;border-radius:50%;
+               display:flex;align-items:center;justify-content:center;color:#000;font-weight:bold;">+</div>
+             </div>`
+          : "";
+
+        return base.replace('<div class="extras"></div>', extras) + icon;
+      })
+      .onNodeClick((d) => {
+        const chartInstance = chartRef.current;
+        if (!chartInstance) return;
+        if (d.children?.length) chartInstance.collapse(d.id);
+        else chartInstance.expand(d.id);
+      });
+
+    chart.expandAll().render().fit(0.85);
+    chartRef.current = chart;
+
+    return () => chart.destroy?.();
+  }, [data, template, layout, selectedExtras, TEMPLATES]);
+
+  // ==================== HANDLERS ====================
   const handleExportImage = async () => {
     const node = chartContainerRef.current;
     if (!node) return;
-    const canvas = await html2canvas(node, {
-      scale: 2,
-      backgroundColor: "#ffffff",
-      useCORS: true,
-    });
+    const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#fff", useCORS: true });
     const link = document.createElement("a");
     link.download = "orgchart.png";
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
 
-  const handleLayoutChange = (layoutKey) => {
-    // expected values: "normal","mixed","tree","treeLeft","treeLeftOffset","treeRight","treeRightOffset","grid"
-    setSelectedLayout(layoutKey);
-    setVersion((v) => v + 1); // trigger redraw
+  const handleLayoutChange = (l) => {
+    setLayout(l);
+    chartRef.current?.layout(LAYOUTS[l].layout).render().fit(0.85);
   };
 
   const handleRefresh = () => {
+    chartRef.current?.expandAll().render().fit(0.85);
     setSearchQuery("");
-    setVisibleData(data || []);
-    setVersion((v) => v + 1);
-  };
-
-  const handleSearch = (q) => {
-    setSearchQuery(q);
-    if (!q || !q.trim()) {
-      setVisibleData(data || []);
-      setVersion((v) => v + 1);
-      return;
-    }
-    if (!originalData?.length) return;
-
-    const root = originalData.find((r) =>
-      String(r.First_Name || r.name || "").toLowerCase().includes(q.toLowerCase())
-    );
-    if (!root) return;
-
-    const collectSubtree = (id) => {
-      const kids = originalData.filter((e) => e["Parent ID"] === id);
-      return [...kids, ...kids.flatMap((c) => collectSubtree(c.ID))];
-    };
-    const subtree = [root, ...collectSubtree(root.ID)];
-    setVisibleData(subtree);
-    setVersion((v) => v + 1);
-  };
-
-  const handlePrint = () => window.print();
-
-  const toggleFullScreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
   };
 
   const toggleExtra = (field) => {
-    setSelectedExtras((prev) => {
-      if (prev.includes(field)) return prev.filter((f) => f !== field);
-      if (prev.length >= 2) return prev; // limit 2
-      return [...prev, field];
-    });
+    setSelectedExtras((prev) =>
+      prev.includes(field)
+        ? prev.filter((f) => f !== field)
+        : prev.length >= 2
+        ? prev
+        : [...prev, field]
+    );
   };
 
-  // === render ===
+  // ==================== JSX ====================
   return (
     <>
-      <div
-        className="print-header"
-        style={{ display: "none", textAlign: "center", marginBottom: 10 }}
-      >
+      <div className="print-header" style={{ display: "none" }}>
         <img src="/onlylogo.png" alt="Logo" />
         <h1>Suprajit</h1>
         <span className="print-department">
@@ -383,26 +223,21 @@ function OrgChartView_d3({
       <div className="orgchart-view">
         <header className="header">SUPRAJIT ENGINEERING LIMITED</header>
 
-        {/* Controls + info */}
-        <div
-          className="orgchart-container"
-          style={{
-            background: "#a9d8f3",
-            padding: "5px 10px",
-            borderRadius: "8px",
-            marginBottom: "5px",
-          }}
-        >
+        {/* Top control bar */}
           <Controls
             searchQuery={searchQuery}
-            setSearchQuery={handleSearch}
+            setSearchQuery={setSearchQuery}
             onRefresh={handleRefresh}
             onBack={onBackToUpload}
-            onPrint={handlePrint}
+            onPrint={() => window.print()}
             onExportImage={handleExportImage}
-            toggleFullScreen={toggleFullScreen}
+            toggleFullScreen={() =>
+              !document.fullscreenElement
+                ? document.documentElement.requestFullscreen()
+                : document.exitFullscreen()
+            }
             onLayoutChange={handleLayoutChange}
-            selectedLayout={selectedLayout}
+            selectedLayout={layout}
             templates={[
               { key: "ana", label: "Ana" },
               { key: "olivia", label: "Olivia" },
@@ -415,16 +250,11 @@ function OrgChartView_d3({
             ]}
             onSelectTemplate={setTemplate}
             selectedTemplate={template}
-            // Ensure your Controls component emits one of these exact keys:
-            // "normal","mixed","tree","treeLeft","treeLeftOffset","treeRight","treeRightOffset","grid"
           />
-
-          {/* Instructions + Field Selector */}
-          <div
-            className="field-selectors"
-            style={{ display: "flex", gap: 3, alignItems: "center", padding: "5px 5px" }}
-          >
-            <span className="instructions-popup" style={{ textAlign: "center" }}>
+        <div className="orgchart-container">
+        {/* Second row with instructions and field selectors */}
+        <div className="field-selectors" style={{ display: 'flex', gap: 3, alignItems: 'center', padding: '5px 5px' }}>
+          <span className= "instructions-popup" style={{ textAlign: "center" }}>
               <button
                 onClick={() => setShowInstructions(true)}
                 title="View Instructions"
@@ -433,51 +263,29 @@ function OrgChartView_d3({
                 ⓘ Instructions
               </button>
             </span>
-            <label style={{ marginRight: 4, fontSize: 14 }}>
-              Before printing, click Refresh to ensure the chart fits properly on your screen.
-            </label>
-            <span style={{ color: "black", marginRight: 8, fontSize: 14 }}>
-              Click on a person to open the popup then click '+' to upload a photo.
+            <label style={{ marginRight: 4, fontSize: 14 }}>Before printing, click the Refresh button to ensure the chart fits properly on your screen.</label>
+            <span style={{ color: 'black', marginRight: 8, fontSize: 14 }}>Click on a person to open the popup then click '+' icon to upload Photo of a person
             </span>
 
-            <label style={{ marginRight: 4, marginLeft: 4, fontSize: 12 }}>
-              Select up to 2 additional fields to show:
-            </label>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 2,
-                maxHeight: 100,
-                width: 180,
-                overflow: "auto",
-                fontSize: 14,
-                padding: 2,
-                border: "1px solid #ddd",
-                borderRadius: 4,
-              }}
-            >
-              {(headers || [])
-                .filter((h) => {
-                  const key = String(h).toLowerCase();
-                  return (
-                    key !== "photo" &&
-                    key !== "image" &&
-                    key !== "first_name" &&
-                    key !== "name"
-                  );
-                })
-                .map((h) => (
-                  <label key={h} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedExtras.includes(h)}
-                      onChange={() => toggleExtra(h)}
-                    />
-                    <span>{h}</span>
-                  </label>
-                ))}
-            </div>
+            <label style={{ marginRight: 4, marginLeft: 4, fontSize: 12 }}>Select up to 2 additional fields to show:</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 100, width: 180, overflow: 'auto', fontSize: 14, padding: 2, border: '1px solid #ddd', borderRadius: 4, textAlign: "left"}}>
+            {(headers || [])
+              .filter((h) => {
+                const key = String(h).toLowerCase();
+                // return key !== 'photo' && key !== 'image' && key !== 'first_name').toLowerCase(); 
+                return !["photo", "image", "first_name", "name"].includes(key);
+              })
+              .map((h) => (
+                <label key={h} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedExtras.includes(h)}
+                    onChange={() => toggleExtra(h)}
+                  />
+                  <span>{h}</span>
+                </label>
+              ))}
+              <span style={{ color: '#666' }}></span>
           </div>
         </div>
 
@@ -485,24 +293,22 @@ function OrgChartView_d3({
         <div className="print-label" ref={exportRef}>
           <div className={`chart-container template-${template}`} id="orgChart" ref={chartContainerRef} />
         </div>
-
+      </div>
+      </div>
         {/* Legend */}
-        <div className="footer-wrapper">
-          <div className="theme">
-            <p className="themep">
-              <img src="./Blue.png" alt="Blue" className="logo1" /> - refers to Active
-            </p>
-            <p className="themep">
-              <img src="./Orange.png" alt="Orange" className="logo1" /> - refers to Vacant
-            </p>
-            <p className="themep">
-              <img src="./Red.png" alt="Red" className="logo1" /> - refers to Notice
-            </p>
-          </div>
+        <div className="theme">
+          <p className="themep">
+            <img src="./Blue.png" alt="Blue" className="logo1" /> - refers to Active
+          </p>
+          <p className="themep">
+            <img src="./Orange.png" alt="Orange" className="logo1" /> - refers to Vacant
+          </p>
+          <p className="themep">
+            <img src="./Red.png" alt="Red" className="logo1" /> - refers to Notice
+          </p>
         </div>
 
         {showInstructions && <InstructionsPopup onClose={() => setShowInstructions(false)} />}
-      </div>
     </>
   );
 }

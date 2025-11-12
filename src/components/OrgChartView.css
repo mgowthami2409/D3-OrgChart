@@ -1,111 +1,122 @@
-/* =============================
-   OrgChartView.css (clean)
-   ============================= */
-
-/* --- Shell/layout --- */
+/* OrgChartView.css */
 .orgchart-view {
+  /* background: white; */
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #fff !important; /* plain background */
 }
 
+/* Header */
 .orgchart-view .header {
   background: linear-gradient(to right, #dfe9f3, #ffffff);
   text-align: center;
-  padding: 6px;
-  font-size: 16px;
+  padding: 6px;             
+  font-size: 16px;          
   font-weight: bold;
   color: #bd2331;
   letter-spacing: 0.5px;
 }
 
-/* --- Top controls bar (your Controls component sits here) --- */
+/* Controls bar */
 .orgchart-view .top-bar {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 4px 0;
-  gap: 4px;
-  height: auto;
+  /* margin: ;                  no extra margin */
+  padding: 4px 0;             /* minimal padding */
+  gap: 4px;                   /* very small gap */
+  height: auto;               /* shrink naturally */
   margin-bottom: 2px;
 }
 
-.template-controls { display: flex; gap: 6px; margin: 0 4px; }
+.template-controls {
+  display: flex;
+  gap: 6px;
+  margin-right: 4px;
+  margin-left: 4px;
+}
 .template-btn {
   padding: 4px 8px;
   border-radius: 4px;
   border: 1px solid #1e4489 !important;
   background: #6aa6d6;
-  color: #fff;
+  color: white;
   font-size: 12px;
   cursor: pointer;
 }
 .template-btn.active {
   background: #1a75b7;
-  border: 1px solid #000;
+  border: 1px solid black;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .orgchart-view .top-bar input {
-  padding: 3px 6px;
+  padding: 3px 6px;           /* compact input */
   border-radius: 4px;
   border: 1px solid #ccc;
   outline: none;
-  width: 160px;
+  width: 160px;               /* reduced width */
   font-size: 12px;
 }
 
 .orgchart-view .top-bar button {
-  padding: 3px 8px;
+  padding: 3px 8px;           /* smaller buttons */
   border: none;
   border-radius: 4px;
-  font-size: 12px;
-  color: #fff;
+  font-size: 12px;            /* smaller font */
+  color: white;
   cursor: pointer;
   font-weight: 500;
   line-height: 1.1;
-  min-width: 55px;
+  min-width: 55px;            /* consistent small width */
 }
-.orgchart-view .top-bar .refresh { background-color: #4caf50; }
-.orgchart-view .top-bar .back    { background-color: #ff4d4d; }
-.orgchart-view .top-bar .print   { background-color: #5a2e9d; }
-.orgchart-view .top-bar .export-img { background-color: #ff9800; }
 
-/* --- Chart container (D3 mounts here) --- */
-.orgchart-view .chart-container,
-.chart-container {
+.orgchart-view .top-bar .refresh {
+  background-color: #4caf50;
+}
+
+.orgchart-view .top-bar .back {
+  background-color: #ff4d4d;
+}
+
+.orgchart-view .top-bar .print {
+  background-color: #5a2e9d;
+}
+
+.orgchart-view .top-bar .export-img {
+  background-color: #ff9800;
+}
+
+/* Chart */
+.orgchart-view .chart-container {
   width: 100%;
   height: 100%;
   overflow: auto;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  background: #fff !important;
-  border-radius: 12px;
-  position: relative;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  margin: 0 auto;
-  /* optional slight upsize; comment out if not desired */
-  /* transform: scale(1.05);
-  transform-origin: top center; */
+  background: white;
 }
 
-/* --- Node text helpers (Balkan/d3-org-chart commonly uses field_*) --- */
-.orgchart .node .field_0,
-#orgChart .node .field_0 {
-  font-size: 26px !important; /* screen size */
-  font-weight: normal;
-  fill: #ffffff !important;
-  color: #ffffff !important;
+/* Name text inside node */
+.orgchart .node .field_0 {
+  font-size: 26px !important;   /* increased font size */
+  /* font-weight: 100 !important; */
+    /* bolder */
+  fill: #ffffff !important;     /* white text */
+  /* color: #ffffff !important; */
+  /* allow wrapping and keep text within node bounds */
+  /* white-space: normal !important; */
+  /* word-wrap: break-word !important; */
   max-width: 90% !important;
   text-align: center !important;
 }
 
+/* Title text inside node */
 .orgchart .node .field_1 {
-  font-size: 20px !important;
+  font-size: 20px !important;   /* increased font size */
   font-weight: 600 !important;
-  fill: #ffffff !important;
+  fill: #ffffff !important;     /* white text */
   color: #ffffff !important;
   white-space: normal !important;
   word-wrap: break-word !important;
@@ -113,129 +124,34 @@
   text-align: center !important;
 }
 
-/* --- Force white text for templates that render via SVG/foreignObject --- */
-.orgchart .node,
-.orgchart .node *,
-#orgChart text,
-#orgChart tspan,
-#orgChart svg text,
-#orgChart svg tspan,
-.orgchart svg text,
-.orgchart svg tspan,
-.boc-node text,
-.boc-node tspan,
-.boc-node *,
-.orgchart .node foreignObject *,
-.orgchart .node foreignObject body,
-.orgchart .node foreignObject div,
-.orgchart .node g,
-.orgchart .node g * {
-  fill: #ffffff !important;
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-  opacity: 1 !important;
-}
-
-/* --- Small status badge in node top-right (if you add it) --- */
-.orgchart .node .status-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  box-shadow: 0 0 3px rgba(0,0,0,0.35);
-  border: 2px solid rgba(255,255,255,0.9);
-  z-index: 9999;
-  pointer-events: none;
-}
-
-/* --- Legend (Active/Vacant/Notice) --- */
-.theme {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  text-align: center;
-  justify-content: center;
-  border: 1px solid #000 !important;
-  padding: 1px !important;
-  margin-top: 8px;
-}
-.logo1 { height: 8px !important; width: 8px !important; }
-.themep { font-size: 12px; margin: 0; display: flex; align-items: center; gap: 6px; }
-
-/* --- Fullscreen button (if used) --- */
-.fullscreen-btn {
-  background: #007bff; color: #fff; border: none;
-  padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; z-index: 1000;
-}
-.fullscreen-btn:hover { background: #0056b3; }
-
-/* --- Layout controls (dropdown) --- */
-.layout-controls { display: flex; align-items: center; gap: 4px; margin: 0 12px; font-size: 14px; color: #333; font-weight: 500; }
-.layout-controls span { font-weight: 600; color: #000; }
-.layout-controls select {
-  padding: 2px 6px; border-radius: 6px; border: 1px solid #ccc; background-color: #f9f9f9;
-  font-size: 12px; cursor: pointer; transition: all 0.2s ease-in-out;
-}
-.layout-controls select:hover { border-color: #007bff; background-color: #fff; }
-.layout-controls select:focus { outline: none; border-color: #0056b3; box-shadow: 0 0 4px rgba(0,91,187,0.4); }
-
-/* --- Make links thicker for specific layouts if you tag container with data-layout --- */
-.custom-orgchart[data-layout="treeRightOffset"] .link path,
-.custom-orgchart[data-layout="treeLeftOffset"] .link path {
-  stroke-width: 5px !important;
-}
-
-/* --- Collapse bubble counter color override --- */
-.orgchart .boc-count {
-  fill: #000000 !important;
-  color: #000000 !important;
-  -webkit-text-fill-color: #000000 !important;
-}
-
-/* --- Instructions popup --- */
-.popup-content {
-  background: #fff;
-  padding: 25px;
-  border-radius: 12px;
-  height: auto;
-  width: 800px;
-  text-align: center;
-  position: relative;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.25);
-  transform: translateY(-30px);
-  animation: drop-in 0.4s ease forwards;
-}
-.popup-content h2 { margin-top: 0; color: #1e4489; text-align: center; }
-.popup-content ol { margin-left: auto; line-height: 1.6; }
-.instructions-popup { text-align: center; width: 200px; }
-
-/* --- D3 SVG interaction cursor --- */
-.chart-container svg { width: 100%; height: 100%; cursor: grab; transition: transform 0.2s ease; }
-.chart-container svg:active { cursor: grabbing; }
-
 /* ================= PRINT STYLES ================= */
 @media print {
-  @page { size: auto; margin: 5mm; }
+  @page {
+    size: auto;
+    margin: 5mm;
+    border: 2px solid black;
+    position: absolute;
+  }
 
-  html, body {
+  body, html {
     margin: 5mm !important;
     margin-top: 10px !important;
     padding: 0 !important;
     border: none !important;
-    background: #fff !important;
+    background: white !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  /* Wrapper that gets the print border/padding */
-  .print-label {
+   /* Wrapper that will get the border */
+   .print-label {
     box-sizing: border-box;
     width: 100%;
     height: 100%;
     padding-bottom: 5mm;
-    overflow: hidden;
+
+    /* this keeps orgchart inside */
+    overflow: hidden;       
     display: flex;
     align-items: center;
     justify-content: center;
@@ -250,75 +166,286 @@
     margin-top: 15px !important;
     margin-left: 35px !important;
   }
-  .print-header img { max-height: 45px; width: auto; }
-  .print-header h1 {
-    font-size: 26px; font-weight: bold; color: #1e4489 !important;
-    font-family: 'Aptos', 'Poppins', sans-serif; margin-top: 5px;
-  }
-  .print-header .print-department {
-    margin: auto !important; font-size: 26px; font-weight: bold;
-    font-family: 'Aptos', 'Poppins', sans-serif; color: #1e4489 !important;
+
+  .print-header img {
+    max-height: 45px;
+    width: auto;
   }
 
-  /* Hide UI that shouldn't print */
+  .print-header h1 {
+    font-size: 26px;
+    font-weight: bold;
+    color: #1e4489 !important;
+    font-family: 'Aptos', 'Poppins', sans-serif;
+    margin-top: 5px;
+  }
+  
+  .print-header .print-department {
+    margin: auto !important;
+    font-size: 26px;
+    font-weight: bold;
+    font-family: 'Aptos', 'Poppins', sans-serif;
+    color: #1e4489 !important;
+  }
+
+  /* Hide unwanted UI */
   .orgchart-view .header,
   .orgchart-view .top-bar,
   .controls,
   .popup,
   .instructions-popup,
-  .upload-container,
-  .field-selectors { display: none !important; }
+  .upload-container {
+    display: none !important;
+  }
 
-  .orgchart-container { background: #fff !important; padding: 0 !important; height: auto !important; }
+  /* Also hide the field selectors UI in print */
+  .field-selectors {
+    display: none !important;
+  }
 
-  #orgChart {
+  /* Keep chart clean */
+  .orgchart-container {
+    /* margin-top: 10px !important; */
+    background: #fff !important;
+    padding: 0 !important;
+    height: auto !important;
+  }
+
+   #orgChart {
     margin: 0 auto !important;
+
+    /* scale chart within border */
     max-width: 100% !important;
     min-width: 100% !important;
     min-height: 100% !important;
     max-height: 90% !important;
   }
 
-  /* Larger print typography */
-  #orgChart .node .field_0 { font-size: 24pt !important; font-weight: normal; }
-  #orgChart .node [class^="field_"]:not(.field_0) { font-size: 18pt !important; font-weight: normal; }
+   /* #orgChart .node text {
+    font-size: 22pt !important; 
+    font-family: 'Aptos', 'Poppins', sans-serif;
+    font-weight: lighter !important;
+  }  */
 
-  .theme { position: relative; }
-  .themep { font-size: 16px; }
+  /* Main name field (field_0) – largest */
+  #orgChart .node .field_0 {
+    font-size: 24pt !important;
+    font-weight: normal;
+  }
 
-  svg { shape-rendering: crispEdges; } /* Prevent blur in print */
+  /* All other fields (field_1, field_2, field_3...) – smaller */
+  #orgChart .node [class^="field_"]:not(.field_0) {
+    font-size: 18pt !important;
+    font-weight: normal;
+  }
+
+  .theme {
+    position: relative;
+  }
+
+  .theme .img {
+    height: 2px !important;
+    width: 2px !important;
+  }
+
+  .themep {
+    font-size: 16px;
+  }
+
+  svg {
+    shape-rendering: crispEdges; /* Prevent blur in print */
+  }
 }
- 
-/* FOOTER — consistent everywhere */
-.footer-wrapper {
-  width: 100%;
-  background: #a9d8f3 !important;
-  padding: 6px 0;
-  display: flex;
-  justify-content: center;
-  border-top: 1px solid black;
-  margin-top: 6px;
+
+/* Small status badge placed in node top-right */
+.orgchart .node .status-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: 0 0 3px rgba(0,0,0,0.35);
+  border: 2px solid rgba(255,255,255,0.9); /* keep visible on colored backgrounds */
+  z-index: 9999;
+  pointer-events: none; /* ignore clicks */
 }
+
+/* Stronger, template-agnostic overrides so some templates' blue/grey text becomes white */
+.orgchart .node,
+.orgchart .node *,
+.orgchart .node .boc-node,
+.orgchart .node .boc-node-content,
+.orgchart .node .boc-node-inner,
+.orgchart .node .node,
+.orgchart .node .chart-node {
+  color: #ffffff !important;
+}
+
+/* Extra aggressive overrides for templates that render SVG text or use foreignObject */
+/* Target the chart container id (common) and common template wrappers to ensure coverage */
+#orgChart text,
+#orgChart tspan,
+#orgChart svg text,
+#orgChart svg tspan,
+.orgchart svg text,
+.orgchart svg tspan,
+.boc-node text,
+.boc-node tspan,
+.boc-node *,
+.orgchart .node foreignObject *,
+.orgchart .node foreignObject body,
+.orgchart .node foreignObject div {
+  fill: #ffffff !important;
+  color: #ffffff !important;
+  /* stroke: #ffffff !important; */
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Sometimes templates use <g> wrappers with inline styles; force color on descendants too */
+.orgchart .node g,
+.orgchart .node g * {
+  fill: #ffffff !important;
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* .theme {
+  display :none;
+} */
 
 .theme {
-  display: flex !important;
-  gap: 25px !important;
-  align-items: center;
-  justify-content: center;
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
+    border: 1px solid black !important;
+    padding: 1px !important;
+  }
+
+  .logo1 {
+    height: 8px !important;
+    width: 8px !important;
+  }
+
+  .themep {
+    font-size: 12px;
+  }
+  
+  .theme {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .fullscreen-btn {
+  /* position: absolute;
+  top: 10px;
+  right: 10px; */
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 1000;
 }
 
-.themep {
-  font-size: 14px !important;
-  margin: 0;
+.fullscreen-btn:hover {
+  background: #0056b3;
+}
+
+/* Container for layout controls */
+.layout-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  margin: 0 12px;
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
 }
 
-.logo1 {
-  width: 12px !important;
-  height: 12px !important;
+/* Label */
+.layout-controls span {
+  font-weight: 600;
+  color: black;
+}
+
+/* Dropdown styling */
+.layout-controls select {
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #f9f9f9;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* On hover */
+.layout-controls select:hover {
+  border-color: #007bff;
+  background-color: #fff;
+}
+
+/* On focus */
+.layout-controls select:focus {
+  outline: none;
+  border-color: #0056b3;
+  box-shadow: 0 0 4px rgba(0, 91, 187, 0.4);
+}
+
+/* Target link thickness for treeRightOffset and treeLeftOffset layouts */
+.custom-orgchart[data-layout="treeRightOffset"] .link path,
+.custom-orgchart[data-layout="treeLeftOffset"] .link path {
+    stroke-width: 5px !important; /* Adjust the value as needed */
+}
+
+/* Override collapse count text */
+.orgchart .boc-count {
+    fill: #000000 !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+.popup-content h2 {
+  margin-top: 0;
+  color: #1e4489;
+  text-align: center;
+}
+
+.popup-content ol {
+  margin-left: auto;
+  line-height: 1.6;
+}
+
+.popup-content {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  height: auto;
+  width: 800px;   /* 👈 this is limiting it */
+  text-align: center;
+  position: relative;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+  transform: translateY(-30px);
+  animation: drop-in 0.4s ease forwards;
+}
+
+.instructions-popup {
+  text-align: center;
+  width:200px;
+}
+
+/* Main name field (field_0) – largest */
+#orgChart .node .field_0 {
+  font-size: 24pt !important;
+  font-weight: normal;
+}
+
+/* All other fields (field_1, field_2, field_3...) – smaller */
+#orgChart .node [class^="field_"]:not(.field_0) {
+  font-size: 18pt !important;
+  font-weight: normal;
 }
