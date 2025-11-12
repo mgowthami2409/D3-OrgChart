@@ -113,6 +113,71 @@ function OrgChartView_d3({
           </div>`
         );
       },
+      belinda: (d) => {
+        const color = getColor(d.data.status);
+        return `
+          <div style="width:240px;border-radius:10px;background:${color};
+            color:#fff;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.2);
+            padding:12px;text-align:center;">
+            <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
+          </div>`;
+      },
+      rony: (d) => {
+        const color = getColor(d.data.status);
+        return `
+          <div style="width:230px;height:110px;border-radius:12px;background:${color};
+            color:#fff;display:flex;align-items:center;justify-content:center;
+            flex-direction:column;box-shadow:0 2px 6px rgba(0,0,0,.15);
+            text-align:center;">
+            <div style="font-weight:700;font-size:16px;">${d.data.name || ""}</div>
+          </div>`;
+      },
+      mery: (d) => {
+        const color = getColor(d.data.status);
+        return `
+          <div style="width:210px;text-align:center;border-radius:12px;background:${color};
+            color:#fff;padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);">
+            <img src="${d.data.photo || ""}" style="width:56px;height:56px;border-radius:50%;
+              border:2px solid #fff;margin-bottom:6px;object-fit:cover;"/>
+            <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
+          </div>`;
+      },
+      polina: (d) => {
+        const color = getColor(d.data.status);
+        return `
+          <div style="width:250px;height:110px;border-radius:10px;background:${color};
+            color:#fff;display:flex;align-items:center;justify-content:space-between;
+            padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);">
+            <img src="${d.data.photo || ""}" style="width:54px;height:54px;border-radius:50%;
+              border:2px solid #fff;object-fit:cover;"/>
+            <div style="flex:1;margin-left:10px;">
+              <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
+            </div>
+          </div>`;
+      },
+      diva: (d) => {
+        const color = getColor(d.data.status);
+        return `
+          <div style="width:230px;border-radius:10px;background:${color};color:#fff;
+            text-align:center;padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);">
+            <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
+            <img src="${d.data.photo || ""}" style="width:46px;height:46px;border-radius:50%;
+              border:2px solid #fff;margin-top:6px;object-fit:cover;"/>
+          </div>`;
+      },
+      isla: (d) => {
+        const color = getColor(d.data.status);
+        return `
+          <div style="width:250px;height:110px;border-radius:12px;background:${color};
+            color:#fff;display:flex;align-items:center;justify-content:center;
+            padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);">
+            <div style="flex:1;text-align:left;">
+              <div style="font-weight:700;font-size:15px;">${d.data.name || ""}</div>
+            </div>
+            <img src="${d.data.photo || ""}" style="width:54px;height:54px;border-radius:50%;
+              border:2px solid #fff;margin-left:10px;object-fit:cover;"/>
+          </div>`;
+      },
     };
   }, []);
 
