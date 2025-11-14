@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import FileUploader from "./components/FileUploader";
-import OrgChartView from "./components/OrgChartView_d3";
+import OrgChartView from "./components/OrgChartView";
 import Popup from "./components/Popup";
 import "./index.css";
 function App() {

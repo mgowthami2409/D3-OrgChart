@@ -1,3 +1,4 @@
+/* InstructionsPopup.js */
 import React from "react";
 
 const InstructionsPopup = ({ onClose }) => {

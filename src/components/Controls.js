@@ -1,3 +1,4 @@
+/* Controls.js */
 import React from "react";
 function Controls({ searchQuery, setSearchQuery, onRefresh, onBack, onPrint, onExportImage, toggleFullScreen, onLayoutChange, selectedLayout, templates = [], onSelectTemplate, selectedTemplate }) {
    return (

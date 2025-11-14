@@ -87,6 +87,16 @@
   background-color: #ff9800;
 }
 
+.orgchart-view .chart-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: white;
+}
+
 /* Chart */
 .orgchart-view .chart-container {
   width: 100%;
@@ -271,46 +281,6 @@
   pointer-events: none; /* ignore clicks */
 }
 
-/* Stronger, template-agnostic overrides so some templates' blue/grey text becomes white */
-.orgchart .node,
-.orgchart .node *,
-.orgchart .node .boc-node,
-.orgchart .node .boc-node-content,
-.orgchart .node .boc-node-inner,
-.orgchart .node .node,
-.orgchart .node .chart-node {
-  color: #ffffff !important;
-}
-
-/* Extra aggressive overrides for templates that render SVG text or use foreignObject */
-/* Target the chart container id (common) and common template wrappers to ensure coverage */
-#orgChart text,
-#orgChart tspan,
-#orgChart svg text,
-#orgChart svg tspan,
-.orgchart svg text,
-.orgchart svg tspan,
-.boc-node text,
-.boc-node tspan,
-.boc-node *,
-.orgchart .node foreignObject *,
-.orgchart .node foreignObject body,
-.orgchart .node foreignObject div {
-  fill: #ffffff !important;
-  color: #ffffff !important;
-  /* stroke: #ffffff !important; */
-  -webkit-text-fill-color: #ffffff !important;
-  opacity: 1 !important;
-}
-
-/* Sometimes templates use <g> wrappers with inline styles; force color on descendants too */
-.orgchart .node g,
-.orgchart .node g * {
-  fill: #ffffff !important;
-  color: #ffffff !important;
-  stroke: #ffffff !important;
-}
-
 /* .theme {
   display :none;
 } */
@@ -402,13 +372,6 @@
     stroke-width: 5px !important; /* Adjust the value as needed */
 }
 
-/* Override collapse count text */
-.orgchart .boc-count {
-    fill: #000000 !important;
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
-}
-
 .popup-content h2 {
   margin-top: 0;
   color: #1e4489;
@@ -448,4 +411,292 @@
 #orgChart .node [class^="field_"]:not(.field_0) {
   font-size: 18pt !important;
   font-weight: normal;
+}
+
+/* ===============================
+   Balkan-node required additions
+   =============================== */
+
+/* Base node box */
+.balkan-node {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+/* Avatar image inside nodes */
+.node-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.node-photo.small {
+  width: 54px;
+  height: 54px;
+}
+
+/* Placeholder avatar (no photo) */
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+  color:#fff;
+}
+
+/* Extra fields container inside nodes */
+.node-extras .extra-field {
+  color: #ffffff !important;
+  font-size: 13px !important;
+  text-align: center;
+  line-height: 1.1;
+  margin: 2px 0;
+  white-space: normal;
+}
+
+/* ===============================
+   Collapse / expand OR descendant count button
+   =============================== */
+.balkan-plus {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 18px;
+  background: orange;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.16);
+  z-index: 30;
+}
+
+.balkan-plus-inner {
+  font-size: 12px;
+  font-weight: 700;
+  color: #000;
+}
+
+/* ===============================
+   Status badge (top right)
+   =============================== */
+.status-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.9);
+  box-shadow: 0 0 3px rgba(0,0,0,0.25);
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* ===============================
+   Chart fullscreen area height fix
+   =============================== */
+#orgChart {
+  width: 100%;
+  height: calc(100vh - 220px); /* fits entire screen below header+controls */
+  min-height: 600px;
+  overflow: auto;
+}
+
+/* ===============================
+   Node inner padding preset
+   =============================== */
+.node-inner {
+  color: white !important;
+}
+
+/* Allow Olivia name to wrap into EXACTLY 2 lines */
+.two-line-name {
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.2;
+    color: #fff;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;   /* MAX 2 LINES */
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+}
+  
+.mery-node {
+  font-family: 'Aptos', 'Poppins', sans-serif;
+}
+
+.mery-node .node-photo {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.node-extras .extra-field {
+  color: #ffffff !important;
+  font-size: 14px !important;
+  text-align: center;
+}
+
+/* =========================
+      POLINA TEMPLATE
+   ========================= */
+
+.polina-node {
+  border-radius: 999px; /* full pill */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: visible;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+}
+
+.polina-content {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-left: 70px; /* space for avatar */
+  padding-right: 20px;
+  position: relative;
+}
+
+/* avatar circle */
+.polina-avatar-wrapper {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.polina-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(255,255,255,0.9);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.polina-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* text */
+.polina-text {
+  color: #fff;
+  display: flex;
+  margin-left: 2px;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.polina-name {
+  font-size: 18px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.polina-extras {
+  font-size: 11px;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+/* allow connectors & toggle to sit outside node box */
+.balkan-node-wrapper {
+  position: relative;
+  display: inline-block;
+  overflow: visible !important;    /* allow toggle and connectors to show outside node */
+  z-index: 2;
+}
+
+/* Strong explicit toggle style (override library defaults) */
+.balkan-toggle {
+  position: absolute !important;
+  bottom: -18px !important;            /* pulled below node */
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50% !important;
+  background: #f4a62a !important;      /* orange */
+  border: 2px solid #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #000 !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+/* ensure text inside looks consistent */
+.balkan-toggle span {
+  display: inline-block;
+  line-height: 1 !important;
+  pointer-events: none;
+}
+
+/* REMOVE ALL d3-org-chart default child count bubbles completely */
+#orgChart .boc-count,
+#orgChart g.boc-count,
+#orgChart .count,
+#orgChart g.count,
+#orgChart .node .count,
+#orgChart .node g.count,
+#orgChart foreignObject .count,
+#orgChart span.count,
+#orgChart div.count {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* super-specific: hide any default d3-org-chart count bubbles and all their descendants */
+#orgChart g.count,
+#orgChart g.count *,
+
+#orgChart g.boc-count,
+#orgChart g.boc-count *,
+
+#orgChart .count,
+#orgChart .count *,
+
+#orgChart .boc-count,
+#orgChart .boc-count *,
+
+#orgChart g[class*="count"],
+#orgChart g[class*="Count"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
