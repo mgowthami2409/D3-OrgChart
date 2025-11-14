@@ -529,7 +529,8 @@
     color: #fff;
 
     display: -webkit-box;
-    -webkit-line-clamp: 2;   /* MAX 2 LINES */
+    /* -webkit-line-clamp: 2;    */
+    /* MAX 2 LINES */
     -webkit-box-orient: vertical;
 
     overflow: hidden;
