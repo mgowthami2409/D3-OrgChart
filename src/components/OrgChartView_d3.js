@@ -633,17 +633,17 @@ function OrgChartView_d3({
     chartRef.current = chart;
 
     // remove any leftover count bubbles after render/redraw
-    // const removeCountBubbles = () => {
-    //   try {
-    //     const c = chartContainerRef.current;
-    //     if (!c) return;
-    //     const selectors = [
-    //       'g.count', 'g.boc-count', '.count', '.boc-count',
-    //       'g[class*="count"]'
-    //     ];
-    //     c.querySelectorAll(selectors.join(',')).forEach(el => el.remove());
-    //   } catch (e) { /* ignore */ }
-    // };
+    const removeCountBubbles = () => {
+      try {
+        const c = chartContainerRef.current;
+        if (!c) return;
+        const selectors = [
+          'g.count', 'g.boc-count', '.count', '.boc-count',
+          'g[class*="count"]'
+        ];
+        c.querySelectorAll(selectors.join(',')).forEach(el => el.remove());
+      } catch (e) { /* ignore */ }
+    };
 
     // call once now and on redraw/render
     removeCountBubbles();
