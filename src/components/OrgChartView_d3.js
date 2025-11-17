@@ -771,10 +771,20 @@ function OrgChartView_d3({
   };
 
   const handleRefresh = () => {
-    if (chartRef.current) {
-      chartRef.current.expandAll().render();
-    }
     setSearchQuery("");
+
+    if (!originalData || !Array.isArray(originalData)) return;
+
+    const fullData = makeChartData(originalData);
+
+    if (chartRef.current) {
+      chartRef.current
+        .data(fullData)     // ← restore full data
+        .expandAll()
+        .render();
+
+      setTimeout(() => chartRef.current.fit(), 60);
+    }
   };
 
   // toggle extras (limit 2)

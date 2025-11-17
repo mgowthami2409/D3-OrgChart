@@ -223,7 +223,6 @@
 
    #orgChart {
     margin: 0 auto !important;
-
     /* scale chart within border */
     max-width: 100% !important;
     min-width: 100% !important;
