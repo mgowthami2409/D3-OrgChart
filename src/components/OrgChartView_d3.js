@@ -730,7 +730,7 @@ function OrgChartView_d3({
     // Also recolor after any render/redraw events from chart
     const onRedraw = () => {
       setTimeout(recolorAndBadges, 40);
-      // setTimeout(removeCountBubbles, 40); // <--- add this
+      setTimeout(removeCountBubbles, 40); // <--- add this
     };
     chart.on?.("render", onRedraw);
     chart.on?.("redraw", onRedraw);
