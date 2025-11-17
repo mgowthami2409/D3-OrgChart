@@ -202,7 +202,7 @@ function OrgChartView_d3({
             </div>
           </div>
         `;
-    },
+      },
 
       rony: (d, conf) => {
         const color = getColor(d.data.status);
@@ -340,7 +340,6 @@ function OrgChartView_d3({
               ">
               ${extrasHtml}
             </div>
-
           </div>
         `;
       },
@@ -376,7 +375,6 @@ function OrgChartView_d3({
         const color = getColor(d.data.status);
         const name = d.data.name || "";
         const extrasHtml = d.data._extrasHtml || "";
-
         const photoHtml = d.data.photo && d.data.photo.trim() !== ""
           ? `<img src="${d.data.photo}" style="
               width:70px;
@@ -444,7 +442,6 @@ function OrgChartView_d3({
             ">
               ${extrasHtml}
             </div>
-
           </div>
         `;
       },
@@ -578,71 +575,79 @@ function OrgChartView_d3({
         d3.select(this).attr("stroke", "#1e4489").attr("stroke-width", 5).attr("fill", "none");
       })
       .nodeContent((d) => {
-        // d is a node object provided by d3-org-chart; d.data is our node data
-        // Add extras html already prepared above
         const base = (TEMPLATES[template] || TEMPLATES.ana)(d, tConf);
-        const childrenCount = (d.children && d.children.length) || 0;
+
         const descendantCount = getDescendantCount(d);
+        const isExpanded = d.children && d.children.length > 0;
 
-       // Unified toggle: minus when expanded, number when collapsed
-      const isExpanded = d.children && d.children.length > 0;
+        const collapseIcon =
+          (d.children || d._children)
+            ? `<div class="balkan-toggle" data-nodeid="${d.id}">
+                <span>${isExpanded ? "-" : descendantCount}</span>
+              </div>`
+            : "";
 
-      const collapseIcon =
-        d.children || d._children
-          ? `<div class="balkan-toggle" data-nodeid="${d.id}" data-count="${descendantCount}">
-              <span>${isExpanded ? "-" : descendantCount}</span>
-            </div>`
-          : "";
-        // add status badge container (will be colored by CSS inline style later)
         const badge = `<div class="status-badge" aria-hidden="true"></div>`;
 
-        // Combine: append icon & badge inside wrapper node
-        // We put icon & badge outside the base content so CSS absolute works
-        const result = `<div class="balkan-node-wrapper" style="position:relative;display:inline-block;">
-                          ${base}
-                          ${collapseIcon}
-                          ${badge}
-                        </div>`;
-        return result;
-      })
+        return `
+          <div class="balkan-node-wrapper" style="position:relative;display:inline-block;overflow:visible;">
+            ${base}
+            ${collapseIcon}
+            ${badge}
+          </div>
+        `;
+    })
+
       // OPEN POPUP when node body clicked
-      // COLLAPSE / EXPAND only when clicking the orange "+"
+      // COLLAPSE / EXPAND only when clicking the orange "+" 
       .onNodeClick((d, event) => {
-        const inst = chartRef.current;
-        if (!inst) return;
+        const chartInst = chartRef.current;
+        if (!chartInst) return;
 
-        const target = event?.srcElement || event?.target;
+        const path = event?.composedPath?.() || [];
+        const isToggle = path.some(el =>
+          el?.classList?.contains?.("balkan-toggle")
+        );
 
-        // If user clicked the PLUS button → collapse/expand only
-        if (target && target.closest(".balkan-toggle")) {
-          if (d.children && d.children.length) inst.collapse(d.id);
-          else inst.expand(d.id);
-          return; // stop here, do NOT open popup
-        }
+        if (isToggle) return; // prevent popup when toggle clicked
 
-        // Otherwise → open popup (same as Balkan)
         const emp = originalData.find(
-          (e) => String(e.ID) === String(d.data.id)
+            (e) => String(e.ID) === String(d.data.id)
         );
 
         if (emp) setSelectedEmployee(emp);
-      });
+    });
 
     chart.expandAll().render();
     chart.fit();
     chartRef.current = chart;
 
-    // remove any leftover count bubbles after render/redraw
     const removeCountBubbles = () => {
       try {
         const c = chartContainerRef.current;
         if (!c) return;
+
         const selectors = [
-          'g.count', 'g.boc-count', '.count', '.boc-count',
-          'g[class*="count"]'
+          // original
+          "g.count", ".count", "g.boc-count", ".boc-count",
+
+          // child-count variants
+          "g.node-children-count",
+          "g.node-children-count *",
+          "text.node-children-count",
+          "circle.node-children-count",
+
+          // wrappers
+          "g.count-wrapper",
+          "g.node-children-count-wrapper",
+
+          // any element containing “count”
+          "[class*='count']",
+          "[class*='Count']"
         ];
-        c.querySelectorAll(selectors.join(',')).forEach(el => el.remove());
-      } catch (e) { /* ignore */ }
+
+        c.querySelectorAll(selectors.join(",")).forEach(el => el.remove());
+      } catch (e) {}
     };
 
     // call once now and on redraw/render
@@ -658,6 +663,8 @@ function OrgChartView_d3({
     const recolorAndBadges = () => {
       try {
         const allNodes = container.querySelectorAll(".balkan-node-wrapper");
+        const chartInst = chartRef.current;
+        if (!chartInst) return;
 
         allNodes.forEach((wrapper) => {
           // status badge color
@@ -668,61 +675,48 @@ function OrgChartView_d3({
             badge.style.background = bg;
           }
 
-          // avatar fit
+          // ensure avatar images fill circles
           wrapper.querySelectorAll("img.node-photo").forEach((img) => {
             img.style.width = "100%";
             img.style.height = "100%";
             img.style.objectFit = "cover";
           });
 
-          // handle collapse button state
+          // handle the collapse button
           const btn = wrapper.querySelector(".balkan-toggle");
           if (!btn) return;
 
           const id = btn.getAttribute("data-nodeid");
-          const chartInst = chartRef.current;
 
-          // detect if expanded
-          const meta = chartInst.getNode ? chartInst.getNode(id) : null;
-          const expanded = meta && meta.children && meta.children.length > 0;
+          // ⭐ the CORRECT node with children
+          const node = chartInst.getNode(id);
+          const isExpanded = node && node.children && node.children.length > 0;
+          const count = getDescendantCount(node);
 
-          // update UI
-          const innerEl = btn.querySelector("span");
-          if (expanded) {
-            btn.classList.add("expanded");
-            btn.classList.remove("collapsed");
-            if (innerEl) innerEl.textContent = "-";
-          } else {
-            btn.classList.remove("expanded");
-            btn.classList.add("collapsed");
+          const span = btn.querySelector("span");
+          if (span) span.textContent = isExpanded ? "-" : count;
 
-            const descendantCount =
-              (meta && meta.descendantsCount) ||
-              getDescendantCount(meta) ||
-              0;
-
-            if (innerEl) innerEl.textContent = descendantCount;
-          }
-
-          // attach click once
           if (!btn._wired) {
-            btn._wired = true;
-            btn.addEventListener("click", (ev) => {
-              ev.stopPropagation();
-              const meta = chartInst.getNode(id);
-              const expanded = meta && meta.children && meta.children.length > 0;
+              btn._wired = true;
+              btn.addEventListener("click", (ev) => {
+                  ev.stopPropagation();
 
-              if (expanded) chartInst.collapse(id);
-              else chartInst.expand(id);
+                  const nd = chartInst.getNode(id);
+                  const expanded = nd && nd.children && nd.children.length > 0;
 
-              setTimeout(() => {
-                recolorAndBadges();
-                chartInst.fit();
-              }, 60);
-            });
+                  if (expanded) chartInst.collapse(id);
+                  else chartInst.expand(id);
+
+                  setTimeout(() => {
+                      recolorAndBadges();
+                      chartInst.fit();
+                  }, 80);
+              });
           }
         });
-      } catch (e) {}
+      } catch (e) {
+        console.error(e);
+      }
     };
 
     // Run recolor after a short delay so DOM exists
@@ -918,32 +912,31 @@ function OrgChartView_d3({
             </span>
 
             <label style={{ marginRight: 4, marginLeft: 4, fontSize: 12 }}>Select up to 2 additional fields to show:</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 100, width: 180, overflow: 'auto', fontSize: 14, padding: 2, border: '1px solid #ddd', borderRadius: 4, textAlign: "left"}}>
-            {(headers || [])
-              .filter((h) => {
-                const key = String(h).toLowerCase();
-                // return key !== 'photo' && key !== 'image' && key !== 'first_name').toLowerCase(); 
-                return !["photo", "image", "first_name", "name"].includes(key);
-              })
-              .map((h) => (
-                <label key={h} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedExtras.includes(h)}
-                    onChange={() => toggleExtra(h)}
-                  />
-                  <span>{h}</span>
-                </label>
-              ))}
-              <span style={{ color: '#666' }}></span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 100, width: 180, overflow: 'auto', fontSize: 14, padding: 2, border: '1px solid #ddd', borderRadius: 4, textAlign: "left"}}>
+              {(headers || [])
+                .filter((h) => {
+                  const key = String(h).toLowerCase();
+                  return !["photo", "image", "first_name", "name"].includes(key);
+                })
+                .map((h) => (
+                  <label key={h} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedExtras.includes(h)}
+                      onChange={() => toggleExtra(h)}
+                    />
+                    <span>{h}</span>
+                  </label>
+                ))}
+                <span style={{ color: '#666' }}></span>
+            </div>
+          </div>
+
+          {/* Chart */}
+          <div className="print-label" ref={exportRef}>
+            <div className={`chart-container template-${template}`} id="orgChart" ref={chartContainerRef} />
           </div>
         </div>
-
-        {/* Chart */}
-        <div className="print-label" ref={exportRef}>
-          <div className={`chart-container template-${template}`} id="orgChart" ref={chartContainerRef} />
-        </div>
-      </div>
       </div>
         {/* Legend */}
         <div className="theme">

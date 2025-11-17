@@ -700,3 +700,51 @@
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+/* FULL REMOVAL OF ALL BUILT-IN CHILD-COUNT ARTIFACTS FROM D3 */
+#orgChart g.node-children-count,
+#orgChart g.node-children-count *,
+#orgChart .node-children-count,
+#orgChart .node-children-count *,
+#orgChart g.node-children-count-wrapper,
+#orgChart g.node-children-count-wrapper *,
+#orgChart .node-children-count-wrapper,
+#orgChart .node-children-count-wrapper *,
+#orgChart foreignObject.node-children-count,
+#orgChart foreignObject.node-children-count *,
+#orgChart [class*="children-count"],
+#orgChart [class*="count-node"],
+#orgChart [class*="node-count"],
+#orgChart g[class*="count"],
+#orgChart g[class*="Count"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* REMOVE ANY AUTOMATIC CARET ^ COMING FROM OLD BALKAN CSS */
+.balkan-toggle span::before,
+.balkan-node-wrapper span::before,
+.node-children-count::before,
+.count::before,
+[class*="count"]::before {
+    content: "" !important;
+}
+
+/* 🔥 REMOVE d3-org-chart’s built-in expand/collapse button completely */
+#orgChart g.node-button-g,
+#orgChart g.node-button-g *,
+#orgChart .node-button-g,
+#orgChart .node-button-g *,
+
+#orgChart .node-button-rect,
+#orgChart g .node-button-rect,
+
+#orgChart foreignObject.node-button-foreign-object,
+#orgChart foreignObject.node-button-foreign-object * {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
