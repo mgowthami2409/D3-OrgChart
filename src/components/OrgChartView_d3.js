@@ -66,14 +66,41 @@ function OrgChartView_d3({
     isla: { nodeWidth: 220, nodeHeight: 140 },
   };
 
+  // Logical layout presets that mimic Balkan’s 8 layouts.
+  // Root is always at the top. We only change how children are spaced and offset.
   const LAYOUTS = {
-    mixed: { layout: "top", compact: false, childrenMargin: 110, siblingsMargin: 30 },
-    normal: { layout: "top", compact: false, childrenMargin: 110, siblingsMargin: 30 },
-    tree: { layout: "top", compact: false, childrenMargin: 110, siblingsMargin: 30 },
-    treeLeft: { layout: "left", compact: false, childrenMargin: 110, siblingsMargin: 30 },
-    treeRight: { layout: "right", compact: false, childrenMargin: 110, siblingsMargin: 30 },
-    grid: { layout: "simple", compact: false, childrenMargin: 80, siblingsMargin: 30 },
-    // you can add other mapping if your Controls uses different names
+    normal: {
+      key: "normal",
+      compact: false,
+    },
+    mixed: {
+      key: "mixed",
+      compact: true, // a bit tighter and more "alternating"
+    },
+    tree: {
+      key: "tree",
+      compact: true, // tall, deep tree
+    },
+    treeLeft: {
+      key: "treeLeft",
+      compact: true,
+    },
+    treeLeftOffset: {
+      key: "treeLeftOffset",
+      compact: true,
+    },
+    treeRight: {
+      key: "treeRight",
+      compact: true,
+    },
+    treeRightOffset: {
+      key: "treeRightOffset",
+      compact: true,
+    },
+    grid: {
+      key: "grid",
+      compact: false,
+    },
   };
 
   const hasPhoto = (d) => Boolean(d.data.photo && d.data.photo.trim() !== "");
@@ -365,7 +392,6 @@ function OrgChartView_d3({
                 <div class="polina-name">${name}</div>
                 <div class="polina-extras">${extrasHtml}</div>
               </div>
-
             </div>
           </div>
         `;
@@ -529,6 +555,15 @@ function OrgChartView_d3({
     [selectedExtras]
   );
 
+  const safeFit = (chart) => {
+    try {
+      if (!chart || !chart.root) return;
+      chart.fit();     // ✅ correct call
+    } catch (e) {
+      console.warn("fit skipped:", e);
+    }
+  };
+
   // Create / re-create chart
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -551,44 +586,114 @@ function OrgChartView_d3({
     const tConf = TEMPLATE_CONFIG[template] || TEMPLATE_CONFIG.ana;
     const layoutConf = LAYOUTS[layout] || LAYOUTS.mixed;
 
+    // Depth-aware spacing to mimic Balkan layouts
+    const getChildrenMargin = (node) => {
+      const depth = node.depth || 0;
+
+      switch (layout) {
+        case "mixed":
+          // Top levels more spread, deeper levels tighter
+          if (depth === 0) return 160;
+          if (depth === 1) return 130;
+          return 90;
+
+        case "tree":
+          // Deep, tall tree: closer children vertically
+          return 110;
+
+        case "treeLeft":
+        case "treeRight":
+          // Slightly more compact than normal
+          return depth === 0 ? 150 : 120;
+
+        case "treeLeftOffset":
+        case "treeRightOffset":
+          // Offset variants – slightly larger to avoid overlap
+          return depth === 0 ? 170 : 130;
+
+        case "grid":
+          // Rows closer together, more like grid
+          return 70;
+
+        case "normal":
+        default:
+          // Balanced default tree
+          return 150;
+      }
+    };
+
+    const getSiblingsMargin = (node) => {
+      const depth = node.depth || 0;
+
+      switch (layout) {
+        case "mixed":
+          // top level fairly wide, deeper tiers closer
+          return depth === 0 ? 70 : 40;
+
+        case "tree":
+          // narrow siblings, focus on vertical flow
+          return 20;
+
+        case "treeLeft":
+        case "treeRight":
+          // a little narrower than normal
+          return 40;
+
+        case "treeLeftOffset":
+        case "treeRightOffset":
+          // keep siblings tight so offset feels clearer
+          return 35;
+
+        case "grid":
+          // grid → siblings wide, uniform rows/cols
+          return 80;
+
+        case "normal":
+        default:
+          return 50;
+      }
+    };
+
     // Correct placement of special template spacing logic
     const isBelinda = template === "belinda";
     const isMery = template === "mery";
 
     chart
+      .layout("top")
       .data(chartData)
+      // .expandAll()        // ✅ THIS LINE FIXES THE ISSUE
       .nodeWidth(() => tConf.nodeWidth)
       .nodeHeight(() => tConf.nodeHeight)
-      .childrenMargin(() =>
-        isMery ? 130 :
-        isBelinda ? 80 :
-        layoutConf.childrenMargin
-      )
-      .siblingsMargin(() =>
-        isMery ? 60 :
-        isBelinda ? 40 :
-        layoutConf.siblingsMargin
-      )
+      .childrenMargin((d) => {
+        // keep special spacing for certain templates if you want
+        if (template === "mery") return 130;
+        if (template === "belinda") return 80;
+        return getChildrenMargin(d);
+      })
+      .siblingsMargin((d) => {
+        if (template === "mery") return 60;
+        if (template === "belinda") return 40;
+        return getSiblingsMargin(d);
+      })
       .compact(layoutConf.compact)
-      .layout(layoutConf.layout)
       .linkUpdate(function () {
-        d3.select(this).attr("stroke", "#1e4489").attr("stroke-width", 5).attr("fill", "none");
+        d3.select(this)
+          .attr("stroke", "#1e4489")
+          .attr("stroke-width", 5)
+          .attr("fill", "none");
       })
       .nodeContent((d) => {
+        // ... keep your existing nodeContent exactly as you have it
         const base = (TEMPLATES[template] || TEMPLATES.ana)(d, tConf);
-
         const descendantCount = getDescendantCount(d);
         const isExpanded = d.children && d.children.length > 0;
-
         const collapseIcon =
           (d.children || d._children)
             ? `<div class="balkan-toggle" data-nodeid="${d.id}">
                 <span>${isExpanded ? "-" : descendantCount}</span>
               </div>`
             : "";
-
         const badge = `<div class="status-badge" aria-hidden="true"></div>`;
-
         return `
           <div class="balkan-node-wrapper" style="position:relative;display:inline-block;overflow:visible;">
             ${base}
@@ -596,7 +701,7 @@ function OrgChartView_d3({
             ${badge}
           </div>
         `;
-    })
+      })
 
       // OPEN POPUP when node body clicked
       // COLLAPSE / EXPAND only when clicking the orange "+" 
@@ -618,9 +723,63 @@ function OrgChartView_d3({
         if (emp) setSelectedEmployee(emp);
     });
 
-    chart.expandAll().render();
-    chart.fit();
+    setTimeout(() => {
+      const svg = container.querySelector("svg");
+      if (!svg) {
+        safeFit(chart);
+        return;
+      }
+      const g = svg.querySelector("g");
+      if (!g) {
+        safeFit(chart);
+        return;
+      }
+
+      // Clear any previous transform
+      g.removeAttribute("transform");
+
+      // Horizontal shifting for offset / side-biased layouts
+      if (layout === "treeLeftOffset") {
+        const offset = -(tConf.nodeWidth * 1.3 + 80);
+        g.setAttribute("transform", `translate(${offset},0)`);
+      } else if (layout === "treeRightOffset") {
+        const offset = tConf.nodeWidth * 1.3 + 80;
+        g.setAttribute("transform", `translate(${offset},0)`);
+      } else if (layout === "treeLeft") {
+        const offset = -(tConf.nodeWidth * 0.4);
+        g.setAttribute("transform", `translate(${offset},0)`);
+      } else if (layout === "treeRight") {
+        const offset = tConf.nodeWidth * 0.4;
+        g.setAttribute("transform", `translate(${offset},0)`);
+      } else if (layout === "grid") {
+        // grid: keep centered, no extra transform
+      }
+
+      // final fit AFTER possible translate
+      setTimeout(() => safeFit(chart), 60);
+    }, 40);
+
     chartRef.current = chart;
+
+    /// -------- CORRECT FULL EXPANSION + AUTO RESIZE SEQUENCE --------
+    setTimeout(() => {
+      // 1. First render (allows chart to compute hidden _children)
+      chart.render();
+
+      setTimeout(() => {
+        // 2. Expand all nodes NOW (when chart is ready)
+        chart.expandAll();
+
+        // 3. Render again with fully expanded tree
+        chart.render();
+
+        setTimeout(() => {
+          // 4. Finally fit the entire chart in the viewport
+          safeFit(chart);
+        }, 50);
+
+      }, 50);
+    }, 30);
 
     const removeCountBubbles = () => {
       try {
@@ -709,7 +868,7 @@ function OrgChartView_d3({
 
                   setTimeout(() => {
                       recolorAndBadges();
-                      chartInst.fit();
+                      safeFit(chartInst);
                   }, 80);
               });
           }
@@ -756,12 +915,14 @@ function OrgChartView_d3({
 
   const handleLayoutChange = (l) => {
     setLayout(l);
-    // instruct chart to update if present
-    if (chartRef.current) {
-      const layoutConf = LAYOUTS[l] || LAYOUTS.mixed;
-      chartRef.current.layout(layoutConf.layout).render();
-      chartRef.current.fit();
-    }
+
+    // Force re-render with new layout handled inside useEffect
+    setTimeout(() => {
+      if (chartRef.current) {
+        chartRef.current.render();
+        safeFit(chartRef.current);
+      }
+    }, 20);
   };
 
   const handleRefresh = () => {
@@ -777,7 +938,7 @@ function OrgChartView_d3({
         .expandAll()
         .render();
 
-      setTimeout(() => chartRef.current.fit(), 60);
+      setTimeout(() => safeFit(chartRef.current), 60);
     }
   };
 
@@ -800,7 +961,7 @@ function OrgChartView_d3({
           .data(makeChartData(data))
           .expandAll()
           .render();
-        setTimeout(() => chartRef.current.fit(), 50);
+        setTimeout(() => safeFit(chartRef.current), 50);
       }
       return;
     }
@@ -845,7 +1006,7 @@ function OrgChartView_d3({
       .expandAll()
       .render();
 
-    setTimeout(() => chartRef.current.fit(), 60);
+    setTimeout(() => safeFit(chartRef.current), 60);
   };
 
   const toggleFullScreen = () => {
@@ -933,25 +1094,25 @@ function OrgChartView_d3({
           </div>
 
           {/* Chart */}
-          <div className="print-label" ref={exportRef}>
+          {/* <div className="print-label" ref={exportRef}> */}
             <div className={`chart-container template-${template}`} id="orgChart" ref={chartContainerRef} />
-          </div>
+          {/* </div> */}
         </div>
       </div>
-        {/* Legend */}
-        <div className="theme">
-          <p className="themep">
-            <img src="./Blue.png" alt="Blue" className="logo1" /> - refers to Active
-          </p>
-          <p className="themep">
-            <img src="./Orange.png" alt="Orange" className="logo1" /> - refers to Vacant
-          </p>
-          <p className="themep">
-            <img src="./Red.png" alt="Red" className="logo1" /> - refers to Notice
-          </p>
-        </div>
+      {/* Legend */}
+      <div className="theme">
+        <p className="themep">
+          <img src="./Blue.png" alt="Blue" className="logo1" /> - refers to Active
+        </p>
+        <p className="themep">
+          <img src="./Orange.png" alt="Orange" className="logo1" /> - refers to Vacant
+        </p>
+        <p className="themep">
+          <img src="./Red.png" alt="Red" className="logo1" /> - refers to Notice
+        </p>
+      </div>
 
-        {showInstructions && <InstructionsPopup onClose={() => setShowInstructions(false)} />}
+      {showInstructions && <InstructionsPopup onClose={() => setShowInstructions(false)} />}
     </>
   );
 }

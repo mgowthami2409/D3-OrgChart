@@ -1,3 +1,4 @@
+/* Popup.js */
 import React, { useRef } from "react";
 
 function Popup({ employee, data, onClose, onUpdateEmployeePhoto }) {
