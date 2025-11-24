@@ -1,4 +1,3 @@
-/* OrgChartView_d3.js */
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import * as d3 from "d3";
 import { OrgChart } from "d3-org-chart";
@@ -587,67 +586,64 @@ function OrgChartView_d3({
     const layoutConf = LAYOUTS[layout] || LAYOUTS.mixed;
 
     // Depth-aware spacing to mimic Balkan layouts
+
+    // Custom leaf arrangement logic for Balkan layouts
     const getChildrenMargin = (node) => {
       const depth = node.depth || 0;
-
+      const isLeaf = !node.children || node.children.length === 0;
       switch (layout) {
         case "mixed":
-          // Top levels more spread, deeper levels tighter
+          // Alternate leaf arrangement: even-indexed leaves wider
+          if (isLeaf) return node.index % 2 === 0 ? 120 : 80;
           if (depth === 0) return 160;
           if (depth === 1) return 130;
           return 90;
-
         case "tree":
-          // Deep, tall tree: closer children vertically
           return 110;
-
         case "treeLeft":
-        case "treeRight":
-          // Slightly more compact than normal
+          // All leaves to left: more margin for leftmost
+          if (isLeaf) return node.index === 0 ? 140 : 100;
           return depth === 0 ? 150 : 120;
-
         case "treeLeftOffset":
-        case "treeRightOffset":
-          // Offset variants – slightly larger to avoid overlap
+          // Offset leaves to left
+          if (isLeaf) return 110 + node.index * 30;
           return depth === 0 ? 170 : 130;
-
+        case "treeRight":
+          // All leaves to right: more margin for rightmost
+          if (isLeaf) return node.index === node.parent.children.length - 1 ? 140 : 100;
+          return depth === 0 ? 150 : 120;
+        case "treeRightOffset":
+          // Offset leaves to right
+          if (isLeaf) return 110 + (node.parent.children.length - node.index - 1) * 30;
+          return depth === 0 ? 170 : 130;
         case "grid":
-          // Rows closer together, more like grid
+          // Arrange leaves in grid: uniform margin
+          if (isLeaf) return 80;
           return 70;
-
         case "normal":
         default:
-          // Balanced default tree
           return 150;
       }
     };
 
     const getSiblingsMargin = (node) => {
       const depth = node.depth || 0;
-
+      const isLeaf = !node.children || node.children.length === 0;
       switch (layout) {
         case "mixed":
-          // top level fairly wide, deeper tiers closer
-          return depth === 0 ? 70 : 40;
-
+          return isLeaf ? 60 : (depth === 0 ? 70 : 40);
         case "tree":
-          // narrow siblings, focus on vertical flow
-          return 20;
-
+          return isLeaf ? 18 : 20;
         case "treeLeft":
-        case "treeRight":
-          // a little narrower than normal
-          return 40;
-
+          return isLeaf ? 35 : 40;
         case "treeLeftOffset":
+          return isLeaf ? 30 : 35;
+        case "treeRight":
+          return isLeaf ? 35 : 40;
         case "treeRightOffset":
-          // keep siblings tight so offset feels clearer
-          return 35;
-
+          return isLeaf ? 30 : 35;
         case "grid":
-          // grid → siblings wide, uniform rows/cols
-          return 80;
-
+          return isLeaf ? 90 : 80;
         case "normal":
         default:
           return 50;
@@ -683,8 +679,12 @@ function OrgChartView_d3({
           .attr("fill", "none");
       })
       .nodeContent((d) => {
-        // ... keep your existing nodeContent exactly as you have it
-        const base = (TEMPLATES[template] || TEMPLATES.ana)(d, tConf);
+        // Always show name field for all layouts/templates
+        let base = (TEMPLATES[template] || TEMPLATES.ana)(d, tConf);
+        // If name is missing in template, add it manually
+        if (!base.includes(d.data.name)) {
+          base += `<div class='node-title two-line-name' style='font-size:22px;'>${d.data.name || ''}</div>`;
+        }
         const descendantCount = getDescendantCount(d);
         const isExpanded = d.children && d.children.length > 0;
         const collapseIcon =
@@ -724,6 +724,7 @@ function OrgChartView_d3({
     });
 
     setTimeout(() => {
+      // Use D3 zoom transform for horizontal shifting
       const svg = container.querySelector("svg");
       if (!svg) {
         safeFit(chart);
@@ -735,27 +736,13 @@ function OrgChartView_d3({
         return;
       }
 
-      // Clear any previous transform
-      g.removeAttribute("transform");
+      // Always use D3 zoom/pan handler for all layouts, no manual offset
+      const zoomHandler = d3.zoom().on("zoom", (event) => {
+        d3.select(g).attr("transform", event.transform);
+      });
+      d3.select(svg).call(zoomHandler);
+      d3.select(svg).transition().duration(300).call(zoomHandler.transform, d3.zoomIdentity);
 
-      // Horizontal shifting for offset / side-biased layouts
-      if (layout === "treeLeftOffset") {
-        const offset = -(tConf.nodeWidth * 1.3 + 80);
-        g.setAttribute("transform", `translate(${offset},0)`);
-      } else if (layout === "treeRightOffset") {
-        const offset = tConf.nodeWidth * 1.3 + 80;
-        g.setAttribute("transform", `translate(${offset},0)`);
-      } else if (layout === "treeLeft") {
-        const offset = -(tConf.nodeWidth * 0.4);
-        g.setAttribute("transform", `translate(${offset},0)`);
-      } else if (layout === "treeRight") {
-        const offset = tConf.nodeWidth * 0.4;
-        g.setAttribute("transform", `translate(${offset},0)`);
-      } else if (layout === "grid") {
-        // grid: keep centered, no extra transform
-      }
-
-      // final fit AFTER possible translate
       setTimeout(() => safeFit(chart), 60);
     }, 40);
 
@@ -819,6 +806,9 @@ function OrgChartView_d3({
     });
 
     // after render, color status badges and set thumbnail sizing
+
+    // Removed manual applyLayoutTransform. All transforms now handled by D3 zoom handler for all layouts.
+
     const recolorAndBadges = () => {
       try {
         const allNodes = container.querySelectorAll(".balkan-node-wrapper");
@@ -855,24 +845,26 @@ function OrgChartView_d3({
           const span = btn.querySelector("span");
           if (span) span.textContent = isExpanded ? "-" : count;
 
-          if (!btn._wired) {
+            if (!btn._wired) {
               btn._wired = true;
               btn.addEventListener("click", (ev) => {
-                  ev.stopPropagation();
+                ev.stopPropagation();
 
-                  const nd = chartInst.getNode(id);
-                  const expanded = nd && nd.children && nd.children.length > 0;
+                const nd = chartInst.getNode(id);
+                const expanded = nd && nd.children && nd.children.length > 0;
 
-                  if (expanded) chartInst.collapse(id);
-                  else chartInst.expand(id);
+                if (expanded) chartInst.collapse(id);
+                else chartInst.expand(id);
 
-                  setTimeout(() => {
-                      recolorAndBadges();
-                      safeFit(chartInst);
-                  }, 80);
+                setTimeout(() => {
+                  // No manual transform needed; D3 zoom handles all transforms for all layouts.
+                  recolorAndBadges();
+                  safeFit(chartInst);
+                }, 80);
               });
-          }
+            }
         });
+        // No manual transform needed; D3 zoom handles all transforms for all layouts.
       } catch (e) {
         console.error(e);
       }
@@ -928,16 +920,22 @@ function OrgChartView_d3({
   const handleRefresh = () => {
     setSearchQuery("");
 
-    if (!originalData || !Array.isArray(originalData)) return;
+    if (layout === "mixed") {
+      // Force MixedLayout to re-render
+      setTimeout(() => {
+        setLayout("normal");
+        setTimeout(() => setLayout("mixed"), 20);
+      }, 0);
+      return;
+    }
 
-    const fullData = makeChartData(originalData);
-
+    // For d3-org-chart layouts
     if (chartRef.current) {
+      const fullData = makeChartData(originalData);
       chartRef.current
-        .data(fullData)     // ← restore full data
+        .data(fullData)
         .expandAll()
         .render();
-
       setTimeout(() => safeFit(chartRef.current), 60);
     }
   };
@@ -1093,10 +1091,13 @@ function OrgChartView_d3({
             </div>
           </div>
 
-          {/* Chart */}
-          {/* <div className="print-label" ref={exportRef}> */}
-            <div className={`chart-container template-${template}`} id="orgChart" ref={chartContainerRef} />
-          {/* </div> */}
+          {/* Chart */} 
+            <div
+              className={`chart-container layout-${layout} template-${template}`}
+              id="orgChart"
+              data-layout={layout}
+              ref={chartContainerRef}
+            />
         </div>
       </div>
       {/* Legend */}
