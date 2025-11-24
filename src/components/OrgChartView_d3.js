@@ -166,7 +166,7 @@ function OrgChartView_d3({
                 ${photo}
               </div>
               <div style="flex:1;margin-left:10px;">
-              <div class="node-name two-line-name" style="color:white;>${name}</div>
+              <div class="node-name two-line-name" style="color:white;">${name}</div>
               <div class="node-extras" style="color:white;display:flex;flex-direction:column;">${extrasHtml}</div>
               </div>
             </div>`
@@ -275,7 +275,7 @@ function OrgChartView_d3({
             </div>
 
             <div class="node-extras"
-              style="font-size:12px;line-height:1.2; color:white;display:flex;flex-direction:column;"
+              style="font-size:12px;line-height:1.2; color:white;display:flex;flex-direction:column;">
               ${extrasHtml}
             </div>
           </div>
@@ -389,8 +389,8 @@ function OrgChartView_d3({
               </div>
 
               <div class="polina-text">
-                <div class="polina-name style="color:white;">${name}</div>
-                <div class="polina-extras" style="color:white;display:flex;flex-direction:column;">>${extrasHtml}</div>
+                <div class="polina-name" style="color:white;">${name}</div>
+                <div class="polina-extras" style="color:white;display:flex;flex-direction:column;">${extrasHtml}</div>
               </div>
             </div>
           </div>
