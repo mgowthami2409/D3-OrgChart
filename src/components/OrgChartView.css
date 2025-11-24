@@ -97,9 +97,19 @@
   background: white;
 }
 
-/* .chart-container.layout-grid > svg > g {
-  /* No extra transform for grid - keep centered 
-} */
+.chart-container {
+  display: block !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+#orgChart svg {
+  transform: none !important;
+  margin: 0 !important;
+  left: 0 !important;
+  top: 0 !important;
+}
+
 
 /* Grid layout: make leaf nodes appear in a grid below parent */
 .chart-container.layout-grid .balkan-node-wrapper {
@@ -670,7 +680,7 @@
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
-  pointer-events: none !important;
+  /* pointer-events: none !important; */
 }
 
 /* super-specific: hide any default d3-org-chart count bubbles and all their descendants */
@@ -691,7 +701,7 @@
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
-  pointer-events: none !important;
+  /* pointer-events: none !important; */
 }
 
 /* FULL REMOVAL OF ALL BUILT-IN CHILD-COUNT ARTIFACTS FROM D3 */
@@ -713,7 +723,7 @@
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
-    pointer-events: none !important;
+    /* pointer-events: none !important; */
 }
 
 /* REMOVE ANY AUTOMATIC CARET ^ COMING FROM OLD BALKAN CSS */
@@ -737,5 +747,22 @@
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
-    pointer-events: none !important;
+    /* pointer-events: none !important; */
 }
+
+/* Allow node events normally */
+.chart-container svg {
+  pointer-events: auto !important;
+}
+
+/* Toggle must ALWAYS catch clicks */
+.balkan-toggle {
+  pointer-events: auto !important;
+  z-index: 999999 !important;
+}
+
+/* Prevent overlay elements from hijacking clicks */
+.balkan-node-wrapper * {
+  pointer-events: auto;
+}
+

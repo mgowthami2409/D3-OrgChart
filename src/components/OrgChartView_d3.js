@@ -1,3 +1,4 @@
+/* OrgChartView_d3.js */
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import * as d3 from "d3";
 import { OrgChart } from "d3-org-chart";
@@ -142,8 +143,8 @@ function OrgChartView_d3({
               ` : ""}
 
               <div style="flex:1;min-width:0;">
-              <div class="node-title two-line-name" style="font-size:22px;">${name}</div>   
-                <div class="node-extras">${extrasHtml}</div>
+              <div class="node-title two-line-name" style="font-size:22px; color:white;">${name}</div>   
+                <div class="node-extras" style="color:white;display:flex;flex-direction:column;">${extrasHtml}</div>
               </div>
             </div>`
         );
@@ -165,8 +166,8 @@ function OrgChartView_d3({
                 ${photo}
               </div>
               <div style="flex:1;margin-left:10px;">
-              <div class="node-name two-line-name">${name}</div>
-              <div class="node-extras">${extrasHtml}</div>
+              <div class="node-name two-line-name" style="color:white;>${name}</div>
+              <div class="node-extras" style="color:white;display:flex;flex-direction:column;">${extrasHtml}</div>
               </div>
             </div>`
         );
@@ -223,7 +224,7 @@ function OrgChartView_d3({
             </div>
 
             <div class="node-extras"
-                style="text-align:center;font-size:11px;color:white;">
+                style="color:white;display:flex;flex-direction:column;">
               ${extrasHtml}
             </div>
           </div>
@@ -269,12 +270,12 @@ function OrgChartView_d3({
             </div>
 
             <div class="two-line-name"
-              style="font-size:15px;font-weight:700;line-height:1.2;margin-bottom:4px;">
+              style="font-size:15px;font-weight:700;line-height:1.2;margin-bottom:4px; color:white;">
               ${name}
             </div>
 
             <div class="node-extras"
-              style="font-size:12px;line-height:1.2;">
+              style="font-size:12px;line-height:1.2; color:white;display:flex;flex-direction:column;"
               ${extrasHtml}
             </div>
           </div>
@@ -388,8 +389,8 @@ function OrgChartView_d3({
               </div>
 
               <div class="polina-text">
-                <div class="polina-name">${name}</div>
-                <div class="polina-extras">${extrasHtml}</div>
+                <div class="polina-name style="color:white;">${name}</div>
+                <div class="polina-extras" style="color:white;display:flex;flex-direction:column;">>${extrasHtml}</div>
               </div>
             </div>
           </div>
@@ -448,6 +449,7 @@ function OrgChartView_d3({
               line-height:1.2;
               max-width:90%;
               margin-bottom:6px;
+              color:white;
               display:-webkit-box;
               -webkit-line-clamp:2;
               -webkit-box-orient:vertical;
@@ -502,6 +504,7 @@ function OrgChartView_d3({
                   font-size:13px;
                   line-height:1.1;
                   margin-bottom:2px;
+                  color:white;
                 ">
                 ${name}
               </div>
@@ -548,7 +551,22 @@ function OrgChartView_d3({
         };
         // assemble extras html for this row (up to 2 selected extras)
         const extras = (selectedExtras || []).slice(0, 2).map((k) => r[k] || "").filter(Boolean);
-        node._extrasHtml = extras.map((ex) => `<div class="extra-field" style="font-size:16px;opacity:0.95;margin-top:3px">${ex}</div>`).join("");
+        node._extrasHtml = extras
+          .map(
+            (ex) =>
+              `<div 
+                  class="extra-field"
+                  style="
+                    color:white;
+                    font-size:16px;
+                    opacity:0.95;
+                    margin-top:3px;
+                    text-align:center;
+                    display:block;        /* 🔥 REQUIRED FOR html2canvas */
+                  "
+              >${ex}</div>`
+          )
+          .join("");
         return node;
       }),
     [selectedExtras]
@@ -562,6 +580,136 @@ function OrgChartView_d3({
       console.warn("fit skipped:", e);
     }
   };
+
+  const recolorAndBadges = () => {
+    try {
+      const container = chartContainerRef.current;
+      if (!container) return;
+
+      const allNodes = container.querySelectorAll(".balkan-node-wrapper");
+      const chartInst = chartRef.current;
+      if (!chartInst) return;
+
+      allNodes.forEach((wrapper) => {
+
+      //-----------------------------------------------
+      // 1) REAL DOM CLICK DETECTOR (perfect version)
+      //-----------------------------------------------
+      if (!wrapper._realClickWired) {
+        wrapper._realClickWired = true;
+
+        wrapper.addEventListener(
+          "click",
+          (ev) => {
+            const isToggle = ev.target.closest(".balkan-toggle");
+
+            if (isToggle) {
+              // mark that toggle was clicked
+              window.__realToggleClick = true;
+
+              // FULLY stop event here: popup will never see it
+              ev.preventDefault();
+              ev.stopPropagation();
+              ev.stopImmediatePropagation();
+            }
+          },
+          true // capture phase → MUST be true
+        );
+      }
+
+        // Coloring badges
+        const inner = wrapper.querySelector(".balkan-node");
+        const badge = wrapper.querySelector(".status-badge");
+        if (inner && badge) {
+          const bg = window.getComputedStyle(inner).backgroundColor;
+          badge.style.background = bg;
+        }
+
+        // Fix images
+        wrapper.querySelectorAll("img.node-photo").forEach((img) => {
+          img.style.width = "100%";
+          img.style.height = "100%";
+          img.style.objectFit = "cover";
+        });
+
+        // Toggle button
+        const btn = wrapper.querySelector(".balkan-toggle");
+        if (!btn) return;
+
+        const rawId = btn.getAttribute("data-nodeid");
+        if (!rawId) return;
+
+        const key = String(rawId);
+        const node = chartInst._nodesMap?.get(key);
+        const span = btn.querySelector("span");
+
+        let isExpanded = false;
+        if (node) {
+          if (Array.isArray(node.children) && node.children.length > 0) {
+            isExpanded = true;
+          } else if (Array.isArray(node._children) && node._children.length > 0) {
+            isExpanded = false;
+          }
+        }
+
+        if (span) {
+          span.textContent = isExpanded ? "-" : "+";
+        }
+
+        if (!btn._wired) {
+          btn._wired = true;
+
+          btn.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            ev.stopPropagation();
+
+            window.__clickedToggle = key;
+
+            const nd = chartInst._nodesMap?.get(key);
+            let expanded = false;
+            if (nd) {
+              expanded = Array.isArray(nd.children) && nd.children.length > 0;
+            }
+
+            // 🔥 FIX: d3-org-chart v3+ requires NODE OBJECT, not ID
+            if (expanded) chartInst.collapse(nd);
+            else chartInst.expand(nd);
+
+            chartInst.render();
+
+            setTimeout(() => {
+              recolorAndBadges();
+              safeFit(chartInst);
+            }, 60);
+          });
+        }
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    const handler = (ev) => {
+      // Detect click on our custom toggle
+      if (ev.target.closest(".balkan-toggle")) {
+        window.__realToggleClick = true;
+
+        // Stop event BEFORE d3-org-chart receives it
+        ev.stopImmediatePropagation();
+        ev.stopPropagation();
+        ev.preventDefault();
+      }
+    };
+
+    // MUST use capture phase → true
+    document.addEventListener("click", handler, true);
+
+    return () => {
+      document.removeEventListener("click", handler, true);
+    };
+  }, []);
 
   // Create / re-create chart
   useEffect(() => {
@@ -687,14 +835,14 @@ function OrgChartView_d3({
         }
         const descendantCount = getDescendantCount(d);
         const isExpanded = d.children && d.children.length > 0;
-        const collapseIcon =
-          (d.children || d._children)
-            ? `<div class="balkan-toggle" data-nodeid="${d.id}">
-                <span>${isExpanded ? "-" : descendantCount}</span>
-              </div>`
-            : "";
+        // const hasKids = (d.children && d.children.length > 0) || (d._children && d._children.length > 0);
+        const collapseIcon = isExpanded
+          ? `<div class="balkan-toggle" data-nodeid="${d.data.id}">
+              <span>${d._children ? "+" : "-"}</span>
+            </div>`
+          : "";
         const badge = `<div class="status-badge" aria-hidden="true"></div>`;
-        return `
+        return `  
           <div class="balkan-node-wrapper" style="position:relative;display:inline-block;overflow:visible;">
             ${base}
             ${collapseIcon}
@@ -706,22 +854,14 @@ function OrgChartView_d3({
       // OPEN POPUP when node body clicked
       // COLLAPSE / EXPAND only when clicking the orange "+" 
       .onNodeClick((d, event) => {
-        const chartInst = chartRef.current;
-        if (!chartInst) return;
+        if (window.__realToggleClick) {
+          window.__realToggleClick = false; // reset
+          return; // block popup
+        }
 
-        const path = event?.composedPath?.() || [];
-        const isToggle = path.some(el =>
-          el?.classList?.contains?.("balkan-toggle")
-        );
-
-        if (isToggle) return; // prevent popup when toggle clicked
-
-        const emp = originalData.find(
-            (e) => String(e.ID) === String(d.data.id)
-        );
-
+        const emp = originalData.find(e => String(e.ID) === String(d.data.id));
         if (emp) setSelectedEmployee(emp);
-    });
+      });
 
     setTimeout(() => {
       // Use D3 zoom transform for horizontal shifting
@@ -746,27 +886,15 @@ function OrgChartView_d3({
       setTimeout(() => safeFit(chart), 60);
     }, 40);
 
+    const isNewChart = !chartRef.current;
     chartRef.current = chart;
 
-    /// -------- CORRECT FULL EXPANSION + AUTO RESIZE SEQUENCE --------
-    setTimeout(() => {
-      // 1. First render (allows chart to compute hidden _children)
-      chart.render();
-
+    if (isNewChart) {
       setTimeout(() => {
-        // 2. Expand all nodes NOW (when chart is ready)
         chart.expandAll();
-
-        // 3. Render again with fully expanded tree
         chart.render();
-
-        setTimeout(() => {
-          // 4. Finally fit the entire chart in the viewport
-          safeFit(chart);
-        }, 50);
-
       }, 50);
-    }, 30);
+    }
 
     const removeCountBubbles = () => {
       try {
@@ -805,71 +933,6 @@ function OrgChartView_d3({
       setTimeout(removeCountBubbles, 10);
     });
 
-    // after render, color status badges and set thumbnail sizing
-
-    // Removed manual applyLayoutTransform. All transforms now handled by D3 zoom handler for all layouts.
-
-    const recolorAndBadges = () => {
-      try {
-        const allNodes = container.querySelectorAll(".balkan-node-wrapper");
-        const chartInst = chartRef.current;
-        if (!chartInst) return;
-
-        allNodes.forEach((wrapper) => {
-          // status badge color
-          const inner = wrapper.querySelector(".balkan-node");
-          const badge = wrapper.querySelector(".status-badge");
-          if (inner && badge) {
-            const bg = window.getComputedStyle(inner).backgroundColor;
-            badge.style.background = bg;
-          }
-
-          // ensure avatar images fill circles
-          wrapper.querySelectorAll("img.node-photo").forEach((img) => {
-            img.style.width = "100%";
-            img.style.height = "100%";
-            img.style.objectFit = "cover";
-          });
-
-          // handle the collapse button
-          const btn = wrapper.querySelector(".balkan-toggle");
-          if (!btn) return;
-
-          const id = btn.getAttribute("data-nodeid");
-
-          // ⭐ the CORRECT node with children
-          const node = chartInst.getNode(id);
-          const isExpanded = node && node.children && node.children.length > 0;
-          const count = getDescendantCount(node);
-
-          const span = btn.querySelector("span");
-          if (span) span.textContent = isExpanded ? "-" : count;
-
-            if (!btn._wired) {
-              btn._wired = true;
-              btn.addEventListener("click", (ev) => {
-                ev.stopPropagation();
-
-                const nd = chartInst.getNode(id);
-                const expanded = nd && nd.children && nd.children.length > 0;
-
-                if (expanded) chartInst.collapse(id);
-                else chartInst.expand(id);
-
-                setTimeout(() => {
-                  // No manual transform needed; D3 zoom handles all transforms for all layouts.
-                  recolorAndBadges();
-                  safeFit(chartInst);
-                }, 80);
-              });
-            }
-        });
-        // No manual transform needed; D3 zoom handles all transforms for all layouts.
-      } catch (e) {
-        console.error(e);
-      }
-    };
-
     // Run recolor after a short delay so DOM exists
     setTimeout(recolorAndBadges, 60);
     // Also recolor after any render/redraw events from chart
@@ -893,15 +956,40 @@ function OrgChartView_d3({
 
   // Export image
   const handleExportImage = async () => {
-    const node = chartContainerRef.current;
-    if (!node) return;
-    // ensure all images are loaded
-    const imgs = node.querySelectorAll("img");
-    await Promise.all(Array.from(imgs).map(img => img.decode?.().catch(() => {})));
-    const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#fff", useCORS: true });
+    const wrapper = exportRef.current;
+    if (!wrapper) return;
+
+    // Fix overflow so html2canvas sees full chart
+    const origOverflow = wrapper.style.overflow;
+    wrapper.style.overflow = "visible";
+
+    // Wait for DOM update
+    await new Promise(res => setTimeout(res, 50));
+
+    // Preload all images inside nodes
+    const imgs = wrapper.querySelectorAll("img");
+    await Promise.all(
+      Array.from(imgs).map(img => {
+        if (img.complete) return img.decode?.().catch(() => {});
+        return new Promise(res => { img.onload = img.onerror = res; });
+      })
+    );
+
+    // Render the whole wrapper (not the SVG alone)
+    const canvas = await html2canvas(wrapper, {
+      backgroundColor: "#ffffff",
+      scale: 2,
+      useCORS: true,
+      foreignObjectRendering: true,   // required for Balkan templates
+      allowTaint: true
+    });
+
+    wrapper.style.overflow = origOverflow;
+
+    // Download PNG
     const link = document.createElement("a");
-    link.download = "orgchart.png";
     link.href = canvas.toDataURL("image/png");
+    link.download = "orgchart.png";
     link.click();
   };
 
@@ -1053,53 +1141,99 @@ function OrgChartView_d3({
           selectedTemplate={template}
         />
 
-        {/* second row: instructions + extras */}
-         <div className="orgchart-container">
-        {/* Second row with instructions and field selectors */}
-        <div className="field-selectors" style={{ display: 'flex', gap: 3, alignItems: 'center', padding: '5px 5px' }}>
-          <span className= "instructions-popup" style={{ textAlign: "center" }}>
-              <button
-                onClick={() => setShowInstructions(true)}
-                title="View Instructions"
-                style={{ fontSize: 14, cursor: "pointer" }}
+        {/* ⭐ WRAPPER NEEDED FOR EXPORT IMAGE */}
+        <div className="print-label" ref={exportRef}>
+          <div className="orgchart-container">
+
+            {/* Second row: instructions + extras */}
+            <div
+              className="field-selectors"
+              style={{
+                display: "flex",
+                gap: 3,
+                alignItems: "center",
+                padding: "5px 5px",
+              }}
+            >
+              <span className="instructions-popup" style={{ textAlign: "center" }}>
+                <button
+                  onClick={() => setShowInstructions(true)}
+                  title="View Instructions"
+                  style={{ fontSize: 14, cursor: "pointer" }}
+                >
+                  ⓘ Instructions
+                </button>
+              </span>
+
+              <label style={{ marginRight: 4, fontSize: 14 }}>
+                Before printing, click the Refresh button to ensure the chart fits
+                properly on your screen.
+              </label>
+
+              <span
+                style={{
+                  color: "black",
+                  marginRight: 8,
+                  fontSize: 14,
+                }}
               >
-                ⓘ Instructions
-              </button>
-            </span>
-            <label style={{ marginRight: 4, fontSize: 14 }}>Before printing, click the Refresh button to ensure the chart fits properly on your screen.</label>
-            <span style={{ color: 'black', marginRight: 8, fontSize: 14 }}>Click on a person to open the popup then click '+' icon to upload Photo of a person
-            </span>
+                Click on a person to open the popup then click '+' icon to upload
+                Photo of a person
+              </span>
 
-            <label style={{ marginRight: 4, marginLeft: 4, fontSize: 12 }}>Select up to 2 additional fields to show:</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 100, width: 180, overflow: 'auto', fontSize: 14, padding: 2, border: '1px solid #ddd', borderRadius: 4, textAlign: "left"}}>
-              {(headers || [])
-                .filter((h) => {
-                  const key = String(h).toLowerCase();
-                  return !["photo", "image", "first_name", "name"].includes(key);
-                })
-                .map((h) => (
-                  <label key={h} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedExtras.includes(h)}
-                      onChange={() => toggleExtra(h)}
-                    />
-                    <span>{h}</span>
-                  </label>
-                ))}
-                <span style={{ color: '#666' }}></span>
+              <label style={{ marginRight: 4, marginLeft: 4, fontSize: 12 }}>
+                Select up to 2 additional fields to show:
+              </label>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  maxHeight: 100,
+                  width: 180,
+                  overflow: "auto",
+                  fontSize: 14,
+                  padding: 2,
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  textAlign: "left",
+                }}
+              >
+                {(headers || [])
+                  .filter((h) => {
+                    const key = String(h).toLowerCase();
+                    return !["photo", "image", "first_name", "name"].includes(key);
+                  })
+                  .map((h) => (
+                    <label
+                      key={h}
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedExtras.includes(h)}
+                        onChange={() => toggleExtra(h)}
+                      />
+                      <span>{h}</span>
+                    </label>
+                  ))}
+
+                <span style={{ color: "#666" }}></span>
+              </div>
             </div>
-          </div>
 
-          {/* Chart */} 
+            {/* 🎯 The actual chart (Must be inside print-label wrapper) */}
             <div
               className={`chart-container layout-${layout} template-${template}`}
               id="orgChart"
               data-layout={layout}
               ref={chartContainerRef}
             />
+          </div>
         </div>
       </div>
+
       {/* Legend */}
       <div className="theme">
         <p className="themep">
