@@ -59,8 +59,8 @@ function OrgChartView_d3({
     ana: { nodeWidth: 300, nodeHeight: 150 },
     olivia: { nodeWidth: 240, nodeHeight: 100 },
     belinda: { nodeWidth: 160, nodeHeight: 160 },
-    rony: { nodeWidth: 160, nodeHeight: 190 },
-    mery: { nodeWidth: 420, nodeHeight: 240 },
+    rony: { nodeWidth: 160, nodeHeight: 200 },
+    mery: { nodeWidth: 420, nodeHeight: 150 },
     polina: { nodeWidth: 300, nodeHeight: 100 },
     diva: { nodeWidth: 220, nodeHeight: 160 },
     isla: { nodeWidth: 220, nodeHeight: 140 },
@@ -117,37 +117,82 @@ function OrgChartView_d3({
     return {
       ana: (d, conf) => {
         const color = getColor(d.data.status);
-        const photo = d.data.photo
-          ? `<img src="${d.data.photo}" class="node-photo" alt="photo">`
-          : photoPlaceholder;
-        const extrasHtml = (d.data._extrasHtml || "");
+        const extrasHtml = d.data._extrasHtml || "";
         const name = d.data.name || "";
-        return baseRect(
-          conf.nodeWidth,
-          conf.nodeHeight,
-          color,
-          `<div class="node-inner ana" style="display:flex;align-items:center;padding:8px 10px;gap:10px;">
-              ${hasPhoto(d) ? `
-                <div style="
-                  width:72px;
-                  height:72px;
-                  flex:0 0 72px;
-                  border-radius:50%;
-                  overflow:hidden;
-                  display:flex;
-                  align-items:center;
-                  justify-content:center;
-                ">
-                  <img src="${d.data.photo}" class="node-photo" alt="photo">
-                </div>
-              ` : ""}
+        const hasImg = hasPhoto(d);
+
+        // ✅ WHEN THERE IS NO PHOTO → compact, text-only card (like required screenshot)
+        if (!hasImg) {
+          return `
+            <div class="balkan-node ana-node"
+              style="
+                width:${conf.nodeWidth}px;
+                height:${conf.nodeHeight}px;
+                background:${color};
+                border-radius:8px;
+                position:relative;
+                overflow:hidden;
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+                justify-content:flex-start;
+                padding:10px 16px;
+                box-sizing:border-box;
+              ">
+
+              <!-- extras on top -->
+              <div class="node-extras">
+                ${extrasHtml}
+              </div>
+
+              <!-- name below, centered -->
+              <div class="node-title">
+                ${name}
+              </div>
+            </div>
+          `;
+        }
+
+        // ✅ WHEN THERE *IS* A PHOTO → keep the existing “photo on the left, text on the right” layout
+        return `
+          <div class="balkan-node ana-node"
+            style="
+              width:${conf.nodeWidth}px;
+              height:${conf.nodeHeight}px;
+              background:${color};
+              border-radius:8px;
+              position:relative;
+              overflow:hidden;
+            ">
+            <div class="node-inner ana"
+              style="display:flex;align-items:center;padding:8px 10px;gap:10px;">
+
+              <div style="
+                width:80px;
+                height:80px;
+                flex:0 0 72px;
+                border-radius:60%;
+                overflow:hidden;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+              ">
+                <img src="${d.data.photo}" class="node-photo" alt="photo">
+              </div>
 
               <div style="flex:1;min-width:0;">
-              <div class="node-title two-line-name" style="font-size:22px; color:white;">${name}</div>   
-                <div class="node-extras" style="color:white;display:flex;flex-direction:column;">${extrasHtml}</div>
+                <div class="node-extras"
+                  style="font-size:11px;line-height:1.1;margin-bottom:4px;text-align:left;">
+                  ${extrasHtml}
+                </div>
+                <div class="node-title two-line-name"
+                  style="font-size:16px;font-weight:700;color:#ffffff;text-align:left;">
+                  ${name}
+                </div>
               </div>
-            </div>`
-        );
+            </div>
+          </div>
+        `;
       },
 
       olivia: (d, conf) => {
@@ -166,8 +211,10 @@ function OrgChartView_d3({
                 ${photo}
               </div>
               <div style="flex:1;margin-left:10px;">
-              <div class="node-name two-line-name" style="color:white;">${name}</div>
-              <div class="node-extras" style="color:white;display:flex;flex-direction:column;">${extrasHtml}</div>
+              <div class="node-name two-line-name-olivia" style="color:white;">${name}</div>
+              <div class="node-extras">
+                ${extrasHtml.replace(/<\/div>\s*<div/gi, " - </div><div")}
+              </div>
               </div>
             </div>`
         );
@@ -177,7 +224,7 @@ function OrgChartView_d3({
         const color = getColor(d.data.status);
         const photo = d.data.photo
           ? `<img src="${d.data.photo}" class="node-photo" alt="photo">`
-          : `<div class="avatar-placeholder">👤</div>`;
+          : `<div class="avatar-placeholder"></div>`;
 
         const name = d.data.name || "";
         const extrasHtml = (d.data._extrasHtml || "");
@@ -211,21 +258,12 @@ function OrgChartView_d3({
               ${photo}
             </div>
 
-            <div class="two-line-name"
-                style="
-                  text-align:center;
-                  font-size:14px;
-                  font-weight:700;
-                  line-height:1.2;
-                  color:white;
-                  margin-bottom:4px;
-                ">
+            <div class="two-line-name-belinda">
               ${name}
             </div>
 
-            <div class="node-extras"
-                style="color:white;display:flex;flex-direction:column;">
-              ${extrasHtml}
+            <div class="node-extras belinda-extras">
+              ${extrasHtml.replace(/<\/div>\s*<div/gi, " – </div><div")}
             </div>
           </div>
         `;
@@ -235,7 +273,7 @@ function OrgChartView_d3({
         const color = getColor(d.data.status);
         const photo = d.data.photo
           ? `<img src="${d.data.photo}" class="node-photo" alt="photo">`
-          : `<div class="avatar-placeholder">👤</div>`;
+          : `<div class="avatar-placeholder"></div>`;
 
         const name = d.data.name || "";
         const extrasHtml = d.data._extrasHtml || "";
@@ -256,27 +294,27 @@ function OrgChartView_d3({
               color:white;
             ">
 
+            <!-- NAME (first, bold, single-line or 2-line clamp) -->
+            <div class="rony-name">
+              ${name}
+            </div>
+
+            <!-- EXTRAS (one single line only, with dash) -->
+            <div class="rony-extras">
+              ${extrasHtml.replace(/<\/div>\s*<div/gi, " - </div><div")}
+            </div>
+
+            <!-- PHOTO (bigger & centered) -->
             <div style="
-              width:60px;
-              height:60px;
+              width:80px;
+              height:80px;
               border-radius:50%;
               overflow:hidden;
-              margin-bottom:8px;
               display:flex;
               align-items:center;
               justify-content:center;
             ">
               ${photo}
-            </div>
-
-            <div class="two-line-name"
-              style="font-size:15px;font-weight:700;line-height:1.2;margin-bottom:4px; color:white;">
-              ${name}
-            </div>
-
-            <div class="node-extras"
-              style="font-size:12px;line-height:1.2; color:white;display:flex;flex-direction:column;">
-              ${extrasHtml}
             </div>
           </div>
         `;
@@ -307,7 +345,6 @@ function OrgChartView_d3({
           <div class="mery-node"
             style="
               width:${conf.nodeWidth}px;
-              min-height:${conf.nodeHeight}px;
               background:${color};
               border-radius:35px;
               padding:10px 14px;
@@ -322,49 +359,17 @@ function OrgChartView_d3({
             ">
 
             <!-- NAME (white bubble) -->
-            <div style="
-                color:white;
-                padding:10px 18px;
-                min-height:42px;
-                border-radius:22px;
-                font-size:24px;
-                font-weight:700;
-                line-height:1.25;
-                max-width:90%;
-                margin-bottom:14px;
-                display:-webkit-box;
-                -webkit-line-clamp:2;
-                -webkit-box-orient:vertical;
-                overflow:hidden;
-              ">
+            <div class="mery-name">
               ${name}
             </div>
 
             <!-- PHOTO -->
-            <div style="
-                width:84px;
-                height:84px;
-                border-radius:50%;
-                overflow:hidden;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                margin-bottom:12px;
-              ">
+            <div>
               ${photoHtml}
             </div>
 
             <!-- EXTRAS SECTION -->
-            <div class="node-extras"
-              style="
-                font-size:14px;
-                line-height:1.2;
-                color:white;
-                text-align:center;
-                display:flex;
-                flex-direction:column;
-                gap:4px;
-              ">
+            <div class="node-extras">
               ${extrasHtml}
             </div>
           </div>
@@ -401,73 +406,65 @@ function OrgChartView_d3({
         const color = getColor(d.data.status);
         const name = d.data.name || "";
         const extrasHtml = d.data._extrasHtml || "";
-        const photoHtml = d.data.photo && d.data.photo.trim() !== ""
-          ? `<img src="${d.data.photo}" style="
-              width:70px;
-              height:70px;
-              border-radius:50%;
-              object-fit:cover;
-              border:3px solid white;
-            "/>`
-          : `<div style="
-              width:70px;
-              height:70px;
-              border-radius:50%;
-              background:white;
-              display:flex;
-              align-items:center;
-              justify-content:center;
-              font-size:30px;
-              color:${color};
-              border:3px solid white;
-            ">👤</div>`;
+
+        const CIRCLE = 70;
+        const BORDER = "#3fabe0";
+
+        const photoHtml =
+          d.data.photo?.trim()
+            ? `<img src="${d.data.photo}" style="
+                  width:${CIRCLE}px;
+                  height:${CIRCLE}px;
+                  border-radius:50%;
+                  object-fit:cover;
+                  border:4px solid ${BORDER};
+              ">`
+            : `<div style="
+                  width:${CIRCLE}px;
+                  height:${CIRCLE}px;
+                  border-radius:50%;
+                  background:white;
+                  border:4px solid ${BORDER};
+              "></div>`;
 
         return `
-          <div class="diva-node" style="
+          <div class="diva-wrapper" style="
             width:${conf.nodeWidth}px;
-            background:${color};
-            border-radius:16px;
-            padding:10px 5px;
-            color:white;
             display:flex;
             flex-direction:column;
             align-items:center;
-            justify-content:flex-start;
-            text-align:center;
-            box-sizing:border-box;
           ">
 
-            <!-- PHOTO -->
-            <div style="margin-bottom:6px;">
+            <!-- Circle ABOVE rectangle, NOT overlapping -->
+            <div style="margin-bottom:10px;">
               ${photoHtml}
             </div>
 
-            <!-- NAME -->
-            <div style="
-              font-size:18px;
-              font-weight:700;
-              line-height:1.2;
-              max-width:90%;
-              margin-bottom:6px;
+            <!-- Rectangle (Balkan size) -->
+            <div class="diva-box" style="
+              background:${color};
+              border-radius:12px;
+              width:100%;
+              height:80px;
+              padding:10px 6px;
+              text-align:center;
               color:white;
-              display:-webkit-box;
-              -webkit-line-clamp:2;
-              -webkit-box-orient:vertical;
-              overflow:hidden;
+              box-sizing:border-box;
             ">
-              ${name}
-            </div>
+              <div style="
+                font-size:14px;
+                font-weight:600;
+                line-height:1.2;
+                overflow:hidden;
+                white-space:nowrap;
+                text-overflow:ellipsis;
+              ">
+                ${name}
+              </div>
 
-            <!-- EXTRAS -->
-            <div style="
-              font-size:13px;
-              line-height:1.1;
-              display:flex;
-              flex-direction:column;
-              color:white;
-              gap:2px;
-            ">
-              ${extrasHtml}
+              <div style="font-size:11px;margin-top:3px;line-height:1.1;">
+                ${extrasHtml}
+              </div>
             </div>
           </div>
         `;
@@ -551,22 +548,24 @@ function OrgChartView_d3({
         };
         // assemble extras html for this row (up to 2 selected extras)
         const extras = (selectedExtras || []).slice(0, 2).map((k) => r[k] || "").filter(Boolean);
-        node._extrasHtml = extras
-          .map(
-            (ex) =>
-              `<div 
-                  class="extra-field"
-                  style="
-                    color:white;
-                    font-size:16px;
-                    opacity:0.95;
-                    margin-top:3px;
-                    text-align:center;
-                    display:block;        /* 🔥 REQUIRED FOR html2canvas */
-                  "
-              >${ex}</div>`
-          )
-          .join("");
+        // If two extras exist → combine them on ONE LINE with a hyphen
+        let combined = "";
+        if (extras.length === 1) {
+          combined = extras[0];
+        } else if (extras.length === 2) {
+          combined = `${extras[0]} - ${extras[1]}`;
+        }
+
+        node._extrasHtml = `
+          <div class="extra-field"
+              style="
+                color:white;opacity:0.95;margin-top:3px;
+                text-align:center;
+                display:inline-block;
+                white-space:normal;
+              ">
+            ${combined}
+          </div>`;
         return node;
       }),
     [selectedExtras]
@@ -626,11 +625,11 @@ function OrgChartView_d3({
         }
 
         // Fix images
-        wrapper.querySelectorAll("img.node-photo").forEach((img) => {
-          img.style.width = "100%";
-          img.style.height = "100%";
-          img.style.objectFit = "cover";
-        });
+        // wrapper.querySelectorAll("img.node-photo").forEach((img) => {
+        //   img.style.width = "100%";
+        //   img.style.height = "100%";
+        //   img.style.objectFit = "cover";
+        // });
 
         // Toggle button
         const btn = wrapper.querySelector(".balkan-toggle");
@@ -817,6 +816,7 @@ function OrgChartView_d3({
       .siblingsMargin((d) => {
         if (template === "mery") return 60;
         if (template === "belinda") return 40;
+        if (template == "rony") return 60
         return getSiblingsMargin(d);
       })
       .compact(layoutConf.compact)

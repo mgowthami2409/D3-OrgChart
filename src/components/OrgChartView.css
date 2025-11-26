@@ -89,7 +89,7 @@
 
 .orgchart-view .chart-container {
   width: 100%;
-  height: 100%;
+  height: calc(100vh - 140px) !important;
   overflow: auto;
   display: flex;
   justify-content: center;
@@ -97,36 +97,17 @@
   background: white;
 }
 
-.chart-container {
-  display: block !important;
-  justify-content: flex-start !important;
-  align-items: flex-start !important;
-}
-
 #orgChart svg {
-  transform: none !important;
-  margin: 0 !important;
-  left: 0 !important;
-  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
 }
-
 
 /* Grid layout: make leaf nodes appear in a grid below parent */
 .chart-container.layout-grid .balkan-node-wrapper {
   display: inline-block !important;
   vertical-align: top;
   margin: 10px 18px !important;
-}
-
-/* Chart */
-.orgchart-view .chart-container {
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  background: white;
 }
 
 /* Name text inside node */
@@ -171,8 +152,8 @@
    /* Wrapper that will get the border */
    .print-label {
     box-sizing: border-box;
-    width: 100%;
-    height: 100%;
+    width: max-content !important;
+    height: max-content !important;
     padding-bottom: 5mm;
 
     /* this keeps orgchart inside */
@@ -235,13 +216,13 @@
     height: auto !important;
   }
 
-   #orgChart {
+   /* #orgChart {
     margin: 0 auto !important;
     max-width: 100% !important;
     min-width: 100% !important;
     min-height: 100% !important;
-    max-height: 90% !important;
-  }
+    max-height: 100% !important;
+  } */
 
   /* Main name field (field_0) – largest */
   #orgChart .node .field_0 {
@@ -287,13 +268,10 @@
   pointer-events: none; /* ignore clicks */
 }
 
-/* .theme {
-  display :none;
-} */
-
 .theme {
     border: 1px solid black !important;
     padding: 1px !important;
+    position: relative;
   }
 
   .logo1 {
@@ -392,7 +370,7 @@
   padding: 25px;
   border-radius: 12px;
   height: auto;
-  width: 800px;   /* 👈 this is limiting it */
+  width: min(800px, 90vw); 
   text-align: center;
   position: relative;
   box-shadow: 0 10px 22px rgba(0,0,0,0.25);
@@ -455,14 +433,23 @@
   color:#fff;
 }
 
-/* Extra fields container inside nodes */
-.node-extras .extra-field {
-  color: #ffffff !important;
-  font-size: 13px !important;
-  text-align: center;
+/* GLOBAL — safe defaults */
+.node-extras {
+  display: block;
+  color: white;
+  font-size: inherit;       /* prevent affecting templates */
   line-height: 1.1;
-  margin: 2px 0;
+  margin: 0;                /* remove unwanted spacing */
+}
+
+/* GLOBAL extra field */
+.node-extras .extra-field {
+  color: #ffffff;
+  font-size: inherit;
   white-space: normal;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
 }
 
 /* ===============================
@@ -508,14 +495,12 @@
   z-index: 50;
 }
 
-/* ===============================
-   Chart fullscreen area height fix
-   =============================== */
 #orgChart {
-  width: 100%;
-  height: calc(100vh - 220px); /* fits entire screen below header+controls */
-  min-height: 600px;
-  overflow: auto;
+  width: 100% !important;
+  height: calc(100vh - 140px) !important;   /* full screen below header + controls */
+  overflow: auto !important;
+  background: white !important;
+  position: relative !important;
 }
 
 /* ===============================
@@ -531,7 +516,7 @@
     font-size: 14px;
     line-height: 1.2;
     color: #fff;
-
+    margin: auto;
     display: -webkit-box;
     -webkit-box-orient: vertical;
 
@@ -547,12 +532,6 @@
 .mery-node .node-photo {
   border-radius: 50%;
   object-fit: cover;
-}
-
-.node-extras .extra-field {
-  color: #ffffff !important;
-  font-size: 14px !important;
-  text-align: center;
 }
 
 /* =========================
@@ -766,3 +745,266 @@
   pointer-events: auto;
 }
 
+/* ============================================
+      FIX ANA TEMPLATE EXACTLY LIKE REQUIRED
+   ============================================ */
+.template-ana .ana-node {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  text-align: center !important;
+  padding: 10px 14px !important;
+  box-sizing: border-box !important;
+}
+
+/* EXTRAS: keep them centered and allow 2 lines */
+.template-ana .ana-node .node-extras {
+  font-size: 16px !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+  margin-bottom: 6px !important;
+  margin-top: 15px !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+
+  overflow: hidden !important;
+  white-space: normal !important;
+}
+
+/* each field inline so `A - B` stays in one line */
+.template-ana .ana-node .node-extras .extra-field {
+  display: inline !important;
+  margin: 0 2px !important;
+  padding: 0 !important;
+  white-space: normal !important;
+}
+
+/* NAME BELOW EXTRAS */
+.template-ana .ana-node .node-title {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  color: white !important;
+  margin-top: 12px !important;
+
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  white-space: normal !important;
+}
+
+/* WHEN PHOTO EXISTS → special layout */
+.template-ana .node-inner.ana {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+/* ============================
+      OLIVIA FIXES (SAFE)
+   ============================ */
+
+.template-olivia .node-extras {
+  display: block !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  color: white !important;
+  white-space: normal !important;
+  margin-top: 10px !important;
+}
+
+.template-olivia .node-extras .extra-field {
+  display: inline !important;     /* <-- makes “Designation – Active” appear on ONE line */
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+}
+
+.two-line-name-olivia {
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.2;
+    color: #fff;
+    margin-top: 10px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+}
+
+/* ============================
+      BELINDA FIXES (SAFE)
+   ============================ */
+
+.template-belinda .belinda-node {
+  text-align: center;
+  color: white;
+}
+
+.two-line-name-belinda {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+  margin-bottom: 0px !important;
+  margin-top: -2px !important;    /* pulls name slightly up */
+  color: white !important;
+  white-space: normal !important;
+}
+
+/* Belinda extra fields: allow up to 2 lines with ellipsis */
+.template-belinda .belinda-extras {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: normal !important;
+
+  margin-top: 0 !important;
+  text-align: center !important;
+}
+
+/* Fix Belinda extras ONLY */
+.template-belinda .node-extras .extra-field {
+  display: inline !important;
+  font-size: 12px !important;
+  /* margin: 0 4px !important; */
+  margin-left: 5px !important;
+  margin-right: 5px !important;
+  padding: 2px !important;
+  white-space: normal !important;
+}
+
+/* ============================
+      RONY — FIXED STYLE
+   ============================ */
+
+.template-rony .rony-name {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  color: white !important;
+  margin-top: 8px !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+
+  overflow: hidden !important;
+  white-space: normal !important;
+}
+
+.template-rony .rony-extras {
+  font-size: 14px !important;
+  color: white !important;
+  text-align: center !important;
+  margin-bottom: 8px !important;
+  margin-top: 6px !important;
+  text-overflow: ellipsis !important;
+}
+
+/* ⭐ Rony extras → allow wrapping up to 2 lines */
+.template-rony .node-extras .extra-field {
+  display: inline-block !important;
+  white-space: normal !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  /* Clamp to 2 lines like Ana/Olivia/Belinda */
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Increase photo size ONLY for Rony template */
+.template-rony .rony-node img.node-photo {
+  width: 90px !important;
+  height: 90px !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+}
+
+/* ============================
+      MERY — FIXED STYLE
+   ============================ */
+
+.template-mery .mery-node {
+  width: 420px !important;
+  height: 200px !important;
+
+  border-radius: 60px !important;       /* pill shape */
+  padding: 10px 16px !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+
+  gap: 6px !important;                   /* correct spacing */
+  box-sizing: border-box !important;
+}
+
+.template-mery .mery-node .node-extras {
+  font-size: 20px !important;
+  margin-top: -2px !important;
+}
+
+.template-mery .mery-node img.node-photo {
+  width: 78px !important;
+  height: 78px !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+}
+
+.template-mery .mery-node .photo-wrapper {
+  width: 84px !important;
+  height: 84px !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Prevent image/icon distortion inside Mery template */
+.template-mery .photo-wrapper {
+  flex-shrink: 0 !important;
+  width: 90px !important;
+  height: 90px !important;
+  min-width: 84px !important;
+  min-height: 84px !important;
+}
+
+.template-mery .photo-wrapper > * {
+  width: 84px !important;
+  height: 84px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+}
+
+.template-mery .mery-name {
+  color:white;
+  min-height:42px;
+  font-size:26px;
+  font-weight:700;
+  line-height:1.25;
+  max-width:90%;
+  /* margin-bottom:5px; */
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
