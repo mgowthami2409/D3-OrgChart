@@ -63,7 +63,7 @@ function OrgChartView_d3({
     mery: { nodeWidth: 420, nodeHeight: 150 },
     polina: { nodeWidth: 300, nodeHeight: 100 },
     diva: { nodeWidth: 220, nodeHeight: 160 },
-    isla: { nodeWidth: 220, nodeHeight: 140 },
+    isla: { nodeWidth: 220, nodeHeight: 100 },
   };
 
   // Logical layout presets that mimic Balkan’s 8 layouts.
@@ -432,50 +432,35 @@ function OrgChartView_d3({
 
       isla: (d, conf) => {
         const color = getColor(d.data.status);
-        const photo = d.data.photo
-          ? `<img src="${d.data.photo}" class="node-photo small" alt="photo">`
-          : `<div class="avatar-placeholder">👤</div>`;
-
         const name = d.data.name || "";
-        const extrasHtml = d.data._extrasHtml || "";   // ← You were missing this
+        const extrasHtml = d.data._extrasHtml || "";
+
+        const hasImg = d.data.photo && d.data.photo.trim() !== "";
+        const photoHtml = hasImg
+          ? `<img src="${d.data.photo}" alt="photo">`
+          : `
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                stroke="#ffc107" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="7" r="4"></circle>
+              <path d="M5.5 21c1.5-4 11.5-4 13 0"></path>
+            </svg>
+          `;
 
         return `
           <div class="balkan-node isla-node"
-            style="
-              width:${conf.nodeWidth}px;
-              height:${conf.nodeHeight}px;
-              background:${color};
-              border-radius:10px;
-              padding:8px;
-              display:flex;
-              align-items:center;
-              justify-content:space-between;
-              box-sizing:border-box;
-              overflow:hidden;
-            ">
+            style="width:${conf.nodeWidth}px;height:${conf.nodeHeight}px;background:${color};position:relative;">
 
-            <div style="display:flex;flex-direction:column;flex:1;min-width:0;">
-              <div class="two-line-name"
-                style="
-                  font-weight:700;
-                  font-size:13px;
-                  line-height:1.1;
-                  margin-bottom:2px;
-                  color:white;
-                ">
-                ${name}
-              </div>
-
-              <!-- ⭐ now EXTRA FIELDS ARE VISIBLE -->
-              <div class="node-extras"
-                style="font-size:11px;line-height:1.1;display:flex;flex-direction:column;color:white;">
-                ${extrasHtml}
-              </div>
+            <!-- Overlapping centered photo -->
+            <div class="isla-photo-wrapper">
+              <div class="isla-photo">${photoHtml}</div>
             </div>
 
-            <div style="flex:0 0 54px;border-radius:50%;overflow:hidden;display:flex;">
-              ${photo}
+            <!-- Text block -->
+            <div class="isla-text-block">
+              <div class="isla-extras">${extrasHtml}</div>
+              <div class="isla-name">${name}</div>
             </div>
+
           </div>
         `;
       }
