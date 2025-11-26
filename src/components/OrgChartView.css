@@ -1005,3 +1005,73 @@
   line-height: 1.2 !important;
   max-width: 200px !important;   /* keeps clean layout */
 }
+
+/* ============================================
+      DIVA TEMPLATE — EXACT MATCH FIX
+   ============================================ */
+
+.template-diva .diva-wrapper {
+  position: relative !important;
+  width: 260px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+/* Circle size */
+.template-diva .diva-photo {
+  width: 120px !important;
+  height: 120px !important;
+  border-radius: 50% !important;
+  border: 5px solid #3fabe0 !important;
+  background: white !important;
+  object-fit: cover !important;
+}
+
+.template-diva .diva-box {
+  width: 260px !important;     /* wider like in required image */
+  min-height: 110px !important;
+  background: #1e4489 !important;
+  /* border-radius: 14px !important; */
+  padding: 12px !important;
+  text-align: center !important;
+  color: white !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+.template-diva .diva-name {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  margin: 4px 0 !important;
+  line-height: 1.2 !important;
+}
+
+.template-diva .diva-extras {
+  font-size: 18px !important;
+  line-height: 1.1 !important;
+  opacity: 0.95 !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+
+/* Diva — remove unwanted auto margin from wrapper */
+.template-diva .diva-photo-wrapper {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 0 !important; /* removes inline-block spacing */
+}
+
+/* The photo must overlap the blue rectangle */
+.template-diva .diva-photo-overlap {
+  position: absolute !important;
+  top: -50px !important;     /* half of photo height */
+  z-index: 10 !important;
+}
+
+/* The blue rectangle starts lower to allow overlap */
+.template-diva .diva-box-shift {
+  margin-top: 60px !important;  /* exactly half the circle height */
+}

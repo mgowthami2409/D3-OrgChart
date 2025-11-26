@@ -407,65 +407,25 @@ function OrgChartView_d3({
         const name = d.data.name || "";
         const extrasHtml = d.data._extrasHtml || "";
 
-        const CIRCLE = 70;
-        const BORDER = "#3fabe0";
-
         const photoHtml =
           d.data.photo?.trim()
-            ? `<img src="${d.data.photo}" style="
-                  width:${CIRCLE}px;
-                  height:${CIRCLE}px;
-                  border-radius:50%;
-                  object-fit:cover;
-                  border:4px solid ${BORDER};
-              ">`
-            : `<div style="
-                  width:${CIRCLE}px;
-                  height:${CIRCLE}px;
-                  border-radius:50%;
-                  background:white;
-                  border:4px solid ${BORDER};
-              "></div>`;
+            ? `<img src="${d.data.photo}" class="diva-photo">`
+            : `<div class="diva-photo"></div>`;
 
         return `
-          <div class="diva-wrapper" style="
-            width:${conf.nodeWidth}px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-          ">
+          <div class="diva-wrapper">
 
-            <!-- Circle ABOVE rectangle, NOT overlapping -->
-            <div style="margin-bottom:10px;">
+            <!-- Circle overlapping rectangle -->
+            <div class="diva-photo-overlap">
               ${photoHtml}
             </div>
 
-            <!-- Rectangle (Balkan size) -->
-            <div class="diva-box" style="
-              background:${color};
-              border-radius:12px;
-              width:100%;
-              height:80px;
-              padding:10px 6px;
-              text-align:center;
-              color:white;
-              box-sizing:border-box;
-            ">
-              <div style="
-                font-size:14px;
-                font-weight:600;
-                line-height:1.2;
-                overflow:hidden;
-                white-space:nowrap;
-                text-overflow:ellipsis;
-              ">
-                ${name}
-              </div>
-
-              <div style="font-size:11px;margin-top:3px;line-height:1.1;">
-                ${extrasHtml}
-              </div>
+            <!-- Blue Rectangle -->
+            <div class="diva-box diva-box-shift">
+              <div class="diva-name">${name}</div>
+              <div class="diva-extras">${extrasHtml}</div>
             </div>
+
           </div>
         `;
       },
@@ -811,6 +771,7 @@ function OrgChartView_d3({
         // keep special spacing for certain templates if you want
         if (template === "mery") return 130;
         if (template === "belinda") return 80;
+        if (template === "diva") return 200;
         return getChildrenMargin(d);
       })
       .siblingsMargin((d) => {
