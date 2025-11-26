@@ -524,89 +524,6 @@
     text-overflow: ellipsis;
     white-space: normal;
 }
-  
-.mery-node {
-  font-family: 'Aptos', 'Poppins', sans-serif;
-}
-
-.mery-node .node-photo {
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-/* =========================
-      POLINA TEMPLATE
-   ========================= */
-
-.polina-node {
-  border-radius: 999px; /* full pill */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: visible;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
-}
-
-.polina-content {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding-left: 70px; /* space for avatar */
-  padding-right: 20px;
-  position: relative;
-}
-
-/* avatar circle */
-.polina-avatar-wrapper {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.polina-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 3px solid rgba(255,255,255,0.9);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-}
-
-.polina-avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-/* text */
-.polina-text {
-  color: #fff;
-  display: flex;
-  margin-left: 2px;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.polina-name {
-  font-size: 18px;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.polina-extras {
-  font-size: 11px;
-  opacity: 0.9;
-  margin-top: 2px;
-}
 
 /* allow connectors & toggle to sit outside node box */
 .balkan-node-wrapper {
@@ -1007,4 +924,84 @@
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
   overflow:hidden;
+}
+
+/* =========================
+      POLINA TEMPLATE
+   ========================= */
+
+.polina-node {
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: visible;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+}
+
+.polina-content {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-left: 70px;
+  padding-right: 20px;
+  position: relative;
+}
+
+.polina-avatar-wrapper {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.polina-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(255,255,255,0.9);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.polina-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.polina-text {
+  color: #fff;
+  display: flex;
+  margin-left: 5px;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.polina-extras {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.template-polina .polina-name {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: white !important;
+
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+
+  overflow: hidden !important;
+  white-space: normal !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.2 !important;
+  max-width: 200px !important;   /* keeps clean layout */
 }

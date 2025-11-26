@@ -395,7 +395,7 @@ function OrgChartView_d3({
 
               <div class="polina-text">
                 <div class="polina-name" style="color:white;">${name}</div>
-                <div class="polina-extras" style="color:white;display:flex;flex-direction:column;">${extrasHtml}</div>
+                <div class="polina-extras">${extrasHtml}</div>
               </div>
             </div>
           </div>
