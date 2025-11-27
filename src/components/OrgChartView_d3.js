@@ -787,12 +787,11 @@ function OrgChartView_d3({
               <span>${d._children ? "+" : "-"}</span>
             </div>`
           : "";
-        const badge = `<div class="status-badge" aria-hidden="true"></div>`;
+        // const badge = `<div class="status-badge" aria-hidden="true"></div>`;
         return `  
           <div class="balkan-node-wrapper" style="position:relative;display:inline-block;overflow:visible;">
             ${base}
             ${collapseIcon}
-            ${badge}
           </div>
         `;
       })

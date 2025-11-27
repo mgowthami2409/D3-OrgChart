@@ -255,7 +255,7 @@
 }
 
 /* Small status badge placed in node top-right */
-.orgchart .node .status-badge {
+/* .orgchart .node .status-badge {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -263,10 +263,10 @@
   height: 14px;
   border-radius: 50%;
   box-shadow: 0 0 3px rgba(0,0,0,0.35);
-  border: 2px solid rgba(255,255,255,0.9); /* keep visible on colored backgrounds */
+  border: 2px solid rgba(255,255,255,0.9); 
   z-index: 9999;
-  pointer-events: none; /* ignore clicks */
-}
+  pointer-events: none; 
+} */
 
 .theme {
     border: 1px solid black !important;
@@ -477,23 +477,7 @@
   font-size: 12px;
   font-weight: 700;
   color: #000;
-}
-
-/* ===============================
-   Status badge (top right)
-   =============================== */
-.status-badge {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.9);
-  box-shadow: 0 0 3px rgba(0,0,0,0.25);
-  pointer-events: none;
-  z-index: 50;
-}
+} 
 
 #orgChart {
   width: 100% !important;
@@ -863,7 +847,7 @@
   width: 420px !important;
   height: 200px !important;
 
-  border-radius: 60px !important;       /* pill shape */
+  border-radius: 80px !important;       /* pill shape */
   padding: 10px 16px !important;
 
   display: flex !important;
@@ -1023,7 +1007,7 @@
   width: 120px !important;
   height: 120px !important;
   border-radius: 50% !important;
-  border: 5px solid #3fabe0 !important;
+  border: 4px solid #3fabe0 !important;
   background: white !important;
   object-fit: cover !important;
 }
